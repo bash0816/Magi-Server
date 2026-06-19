@@ -1,0 +1,64 @@
+name: Publish magi-server to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Magi-System build run ID"
+        required: true
+        type: string
+      tarball_sha256:
+        description: "SHA256 of tarball (64-char hex)"
+        required: true
+        type: string
+
+concurrency:
+  group: npm-publish-magi-server
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    # MAGI_SYSTEM_PAT: fine-grained PAT, Magi-System repo, permissions: Actions (read)
+    # NPM_TOKEN: npm automation token with publish permission
+    steps:
+      - name: Validate inputs
+        env:
+          RUN_ID: ${{ inputs.build_run_id }}
+          SHA256: ${{ inputs.tarball_sha256 }}
+        run: |
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "::error::Invalid run_id"; exit 1; }
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::Invalid sha256"; exit 1; }
+
+      - name: Download artifact from Magi-System
+        env:
+          GH_TOKEN: ${{ secrets.MAGI_SYSTEM_PAT }}
+          RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          gh run download "$RUN_ID" \
+            --repo bash0816/Magi-System \
+            --name magi-server-tgz \
+            --dir /tmp/artifact
+
+      - name: Verify tarball sha256
+        env:
+          EXPECTED: ${{ inputs.tarball_sha256 }}
+        run: |
+          TGZ_FILES=(/tmp/artifact/bash0816-magi-server-*.tgz)
+          [ "${#TGZ_FILES[@]}" -eq 1 ] || { echo "::error::Expected 1 tgz, found ${#TGZ_FILES[@]}"; exit 1; }
+          ACTUAL=$(sha256sum "${TGZ_FILES[0]}" | awk '{print $1}')
+          [ "$ACTUAL" = "$EXPECTED" ] || { echo "::error::sha256 mismatch (expected=$EXPECTED actual=$ACTUAL)"; exit 1; }
+          echo "integrity OK: $ACTUAL"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish to npm as @staging
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          TGZ_FILES=(/tmp/artifact/bash0816-magi-server-*.tgz)
+          npm publish "${TGZ_FILES[0]}" --ignore-scripts --access public --tag staging

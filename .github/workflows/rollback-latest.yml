@@ -1,0 +1,59 @@
+name: Rollback magi-server Latest
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to rollback @latest to (e.g. 0.33.2)"
+        required: true
+        type: string
+      reason:
+        description: "Reason for emergency rollback (audit log)"
+        required: true
+        type: string
+
+concurrency:
+  group: npm-publish-magi-server
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Emergency rollback @latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          echo "$VERSION" | grep -qE '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' \
+            || { echo "::error::Invalid semver: $VERSION"; exit 1; }
+
+          FOUND=$(npm view "@bash0816/magi-server@${VERSION}" version 2>/dev/null || true)
+          [ "$FOUND" = "$VERSION" ] \
+            || { echo "::error::$VERSION not found on npm registry"; exit 1; }
+
+          TAGS=$(npm view "@bash0816/magi-server" dist-tags --json 2>/dev/null || echo '{}')
+          IS_ALLOWED=$(DIST_TAGS="$TAGS" TARGET_VERSION="$VERSION" node -e "
+            const tags = JSON.parse(process.env.DIST_TAGS);
+            const version = process.env.TARGET_VERSION;
+            const allowed = ['candidate', 'latest', 'prev-latest'];
+            console.log(allowed.some(t => tags[t] === version) ? 'yes' : 'no');
+          ")
+          [ "$IS_ALLOWED" = "yes" ] \
+            || { echo "::error::$VERSION has no known dist-tag (candidate/latest/prev-latest). Rollback restricted."; exit 1; }
+
+          CURRENT_LATEST=$(npm view "@bash0816/magi-server" dist-tags.latest 2>/dev/null || true)
+          if [ -n "$CURRENT_LATEST" ] && [ "$CURRENT_LATEST" != "$VERSION" ]; then
+            npm dist-tag add "@bash0816/magi-server@${CURRENT_LATEST}" prev-latest
+          fi
+
+          echo "EMERGENCY ROLLBACK: reason=$REASON target=$VERSION"
+          npm dist-tag add "@bash0816/magi-server@${VERSION}" latest
+          echo "Rolled back @bash0816/magi-server @latest → $VERSION"

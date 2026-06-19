@@ -1,0 +1,57 @@
+name: Promote magi-server candidate to latest
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to promote from @candidate to @latest (e.g. 0.34.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: npm-publish-magi-server
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Validate and promote @candidate to @latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "$VERSION" | grep -qE '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' \
+            || { echo "::error::Invalid semver: $VERSION"; exit 1; }
+
+          CANDIDATE=$(npm view "@bash0816/magi-server" dist-tags.candidate 2>/dev/null || true)
+          [ "$CANDIDATE" = "$VERSION" ] \
+            || { echo "::error::@candidate is '$CANDIDATE', not '$VERSION'. Promote to @candidate first."; exit 1; }
+
+          CURRENT_LATEST=$(npm view "@bash0816/magi-server" dist-tags.latest 2>/dev/null || true)
+          if [ -n "$CURRENT_LATEST" ]; then
+            COMPARE=$(node -e "
+              const a = '$VERSION'.split('.').map(Number);
+              const b = '$CURRENT_LATEST'.split('.').map(Number);
+              for (let i = 0; i < 3; i++) {
+                if (a[i] > b[i]) { process.stdout.write('gt'); process.exit(); }
+                if (a[i] < b[i]) { process.stdout.write('lt'); process.exit(); }
+              }
+              process.stdout.write('eq');
+            ")
+            [ "$COMPARE" != "lt" ] \
+              || { echo "::error::Would downgrade @latest from $CURRENT_LATEST to $VERSION"; exit 1; }
+          fi
+
+          if [ -n "$CURRENT_LATEST" ] && [ "$CURRENT_LATEST" != "$VERSION" ]; then
+            npm dist-tag add "@bash0816/magi-server@${CURRENT_LATEST}" prev-latest
+          fi
+
+          npm dist-tag add "@bash0816/magi-server@${VERSION}" latest
+          echo "Promoted @bash0816/magi-server@${VERSION}: @candidate → @latest"

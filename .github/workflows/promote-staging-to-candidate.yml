@@ -1,0 +1,53 @@
+name: Promote magi-server staging to candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to promote from @staging to @candidate (e.g. 0.34.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: npm-publish-magi-server
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Validate and promote @staging to @candidate
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "$VERSION" | grep -qE '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' \
+            || { echo "::error::Invalid semver: $VERSION"; exit 1; }
+
+          STAGING=$(npm view "@bash0816/magi-server" dist-tags.staging 2>/dev/null || true)
+          [ "$STAGING" = "$VERSION" ] \
+            || { echo "::error::@staging is '$STAGING', not '$VERSION'. Publish to @staging first."; exit 1; }
+
+          CURRENT_CANDIDATE=$(npm view "@bash0816/magi-server" dist-tags.candidate 2>/dev/null || true)
+          if [ -n "$CURRENT_CANDIDATE" ]; then
+            COMPARE=$(node -e "
+              const a = '$VERSION'.split('.').map(Number);
+              const b = '$CURRENT_CANDIDATE'.split('.').map(Number);
+              for (let i = 0; i < 3; i++) {
+                if (a[i] > b[i]) { process.stdout.write('gt'); process.exit(); }
+                if (a[i] < b[i]) { process.stdout.write('lt'); process.exit(); }
+              }
+              process.stdout.write('eq');
+            ")
+            [ "$COMPARE" != "lt" ] \
+              || { echo "::error::Would downgrade @candidate from $CURRENT_CANDIDATE to $VERSION"; exit 1; }
+          fi
+
+          npm dist-tag add "@bash0816/magi-server@${VERSION}" candidate
+          echo "Promoted @bash0816/magi-server@${VERSION}: @staging → @candidate"
