@@ -18,9 +18,8 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, oci]
     environment: npm-publish
-    # MAGI_SYSTEM_PAT: fine-grained PAT, Magi-System repo, permissions: Actions (read)
     # NPM_TOKEN: npm automation token with publish permission
     steps:
       - name: Validate inputs
@@ -31,15 +30,15 @@ jobs:
           [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "::error::Invalid run_id"; exit 1; }
           [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::Invalid sha256"; exit 1; }
 
-      - name: Download artifact from Magi-System
+      - name: Copy tarball from OCI runner local storage
         env:
-          GH_TOKEN: ${{ secrets.MAGI_SYSTEM_PAT }}
           RUN_ID: ${{ inputs.build_run_id }}
         run: |
-          gh run download "$RUN_ID" \
-            --repo bash0816/Magi-System \
-            --name magi-server-tgz \
-            --dir /tmp/artifact
+          ARTIFACT_DIR="/tmp/magi-artifacts/$RUN_ID"
+          [ -d "$ARTIFACT_DIR" ] || { echo "::error::Artifact dir not found: $ARTIFACT_DIR"; exit 1; }
+          mkdir -p /tmp/artifact
+          cp "$ARTIFACT_DIR/"bash0816-magi-server-*.tgz /tmp/artifact/
+          ls -la /tmp/artifact/
 
       - name: Verify tarball sha256
         env:
@@ -62,3 +61,10 @@ jobs:
         run: |
           TGZ_FILES=(/tmp/artifact/bash0816-magi-server-*.tgz)
           npm publish "${TGZ_FILES[0]}" --ignore-scripts --access public --tag staging
+
+      - name: Cleanup OCI artifact
+        if: always()
+        env:
+          RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          rm -rf "/tmp/magi-artifacts/$RUN_ID" /tmp/artifact || true
