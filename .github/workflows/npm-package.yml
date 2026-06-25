@@ -34,17 +34,17 @@ jobs:
         env:
           RUN_ID: ${{ inputs.build_run_id }}
         run: |
-          ARTIFACT_DIR="/tmp/magi-artifacts/$RUN_ID"
+          ARTIFACT_DIR="$HOME/magi-artifacts/$RUN_ID"
           [ -d "$ARTIFACT_DIR" ] || { echo "::error::Artifact dir not found: $ARTIFACT_DIR"; exit 1; }
-          mkdir -p /tmp/artifact
-          cp "$ARTIFACT_DIR/"bash0816-magi-server-*.tgz /tmp/artifact/
-          ls -la /tmp/artifact/
+          mkdir -p /tmp/magi-publish
+          cp "$ARTIFACT_DIR/"bash0816-magi-server-*.tgz /tmp/magi-publish/
+          ls -la /tmp/magi-publish/
 
       - name: Verify tarball sha256
         env:
           EXPECTED: ${{ inputs.tarball_sha256 }}
         run: |
-          TGZ_FILES=(/tmp/artifact/bash0816-magi-server-*.tgz)
+          TGZ_FILES=(/tmp/magi-publish/bash0816-magi-server-*.tgz)
           [ "${#TGZ_FILES[@]}" -eq 1 ] || { echo "::error::Expected 1 tgz, found ${#TGZ_FILES[@]}"; exit 1; }
           ACTUAL=$(sha256sum "${TGZ_FILES[0]}" | awk '{print $1}')
           [ "$ACTUAL" = "$EXPECTED" ] || { echo "::error::sha256 mismatch (expected=$EXPECTED actual=$ACTUAL)"; exit 1; }
@@ -59,12 +59,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          TGZ_FILES=(/tmp/artifact/bash0816-magi-server-*.tgz)
+          TGZ_FILES=(/tmp/magi-publish/bash0816-magi-server-*.tgz)
           npm publish "${TGZ_FILES[0]}" --ignore-scripts --access public --tag staging
 
-      - name: Cleanup OCI artifact
+      - name: Cleanup
         if: always()
         env:
           RUN_ID: ${{ inputs.build_run_id }}
         run: |
-          rm -rf "/tmp/magi-artifacts/$RUN_ID" /tmp/artifact || true
+          rm -rf "/tmp/magi-publish" "$HOME/magi-artifacts/$RUN_ID" || true
