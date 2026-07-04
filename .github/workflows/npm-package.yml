@@ -19,8 +19,7 @@ concurrency:
 jobs:
   publish:
     runs-on: [self-hosted, Linux, X64, oci]
-    environment: npm-publish
-    # NPM_TOKEN: npm automation token with publish permission
+    # npm-publish environment は @candidate/@latest 昇格のみに使用。@staging は承認不要。
     steps:
       - name: Validate inputs
         env:
