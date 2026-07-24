@@ -1,0 +1,187 @@
+{
+  "providers": {
+    "claude": {
+      "label": "Claude (Anthropic)",
+      "models": [
+        {
+          "id": "claude-opus-4-7",
+          "label": "Claude Opus 4.7",
+          "transport": ["cli", "api"],
+          "available_from": "2026-04-17",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "claude-opus-4-6",
+          "label": "Claude Opus 4.6",
+          "transport": ["cli", "api"],
+          "available_from": "2025-08-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "claude-sonnet-4-6",
+          "label": "Claude Sonnet 4.6",
+          "transport": ["cli", "api"],
+          "available_from": "2025-08-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "claude-haiku-4-5-20251001",
+          "label": "Claude Haiku 4.5",
+          "transport": ["cli", "api"],
+          "available_from": "2025-10-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "claude-opus-4-5",
+          "label": "Claude Opus 4.5",
+          "transport": ["cli", "api"],
+          "available_from": "2025-07-01",
+          "deprecated_at": "2026-06-01",
+          "shutdown_at": null
+        },
+        {
+          "id": "claude-sonnet-4-5",
+          "label": "Claude Sonnet 4.5",
+          "transport": ["cli", "api"],
+          "available_from": "2025-07-01",
+          "deprecated_at": "2026-06-01",
+          "shutdown_at": null
+        }
+      ]
+    },
+    "openai": {
+      "label": "OpenAI",
+      "models": [
+        {
+          "id": "gpt-5.5",
+          "label": "GPT-5.5",
+          "transport": ["cli", "api"],
+          "available_from": "2026-04-23",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gpt-5.5-pro",
+          "label": "GPT-5.5 Pro",
+          "transport": ["cli", "api"],
+          "available_from": "2026-04-23",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gpt-5.4",
+          "label": "GPT-5.4",
+          "transport": ["cli", "api"],
+          "available_from": "2026-03-05",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gpt-5.4-mini",
+          "label": "GPT-5.4 mini",
+          "transport": ["cli", "api"],
+          "available_from": "2026-03-17",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gpt-5.3-codex",
+          "label": "GPT-5.3 Codex",
+          "transport": ["cli"],
+          "available_from": "2025-09-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gpt-5.3-codex-spark",
+          "label": "GPT-5.3 Codex Spark (Preview)",
+          "transport": ["cli"],
+          "available_from": "2026-03-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        }
+      ]
+    },
+    "gemini": {
+      "label": "Gemini (Google)",
+      "models": [
+        {
+          "id": "gemini-3.1-pro-preview",
+          "label": "Gemini 3.1 Pro (Preview)",
+          "transport": ["cli", "api"],
+          "available_from": "2026-04-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-3.1-flash-lite-preview",
+          "label": "Gemini 3.1 Flash Lite (Preview)",
+          "transport": ["cli", "api"],
+          "available_from": "2026-04-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-3.1-flash-live-preview",
+          "label": "Gemini 3.1 Flash Live (Preview)",
+          "transport": ["api"],
+          "available_from": "2026-03-01",
+          "deprecated_at": null,
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-3-pro",
+          "label": "Gemini 3 Pro",
+          "transport": ["cli", "api"],
+          "available_from": "2026-01-01",
+          "deprecated_at": "2026-04-17",
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-3-flash",
+          "label": "Gemini 3 Flash",
+          "transport": ["cli", "api"],
+          "available_from": "2026-01-01",
+          "deprecated_at": "2026-04-17",
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-2.5-pro",
+          "label": "Gemini 2.5 Pro",
+          "transport": ["cli", "api"],
+          "available_from": "2025-05-01",
+          "deprecated_at": "2026-06-01",
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-2.5-flash",
+          "label": "Gemini 2.5 Flash",
+          "transport": ["cli", "api"],
+          "available_from": "2025-05-01",
+          "deprecated_at": "2026-06-01",
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-2.0-flash",
+          "label": "Gemini 2.0 Flash",
+          "transport": ["cli", "api"],
+          "available_from": "2025-02-01",
+          "deprecated_at": "2026-06-01",
+          "shutdown_at": null
+        },
+        {
+          "id": "gemini-3-pro-preview",
+          "label": "Gemini 3 Pro Preview",
+          "transport": ["cli", "api"],
+          "available_from": "2025-12-01",
+          "deprecated_at": "2026-03-09",
+          "shutdown_at": "2026-03-09"
+        }
+      ]
+    }
+  }
+}
