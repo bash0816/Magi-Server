@@ -19,8 +19,13 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    # npm-publish environment は @candidate/@latest 昇格のみに使用。@staging は承認不要
-    # (無承認で実行できるぶん、Magi-Systemでの正当なビルドrun由来であることをAPIで検証する)。
+    environment: npm-publish
+    # 2026-07-25 (BUG-111調査で発覚・是正): 2026-07-04に「@staging publishは承認不要」にする
+    # 目的でこの環境参照を外していたが、NPM_TOKENはnpm-publish environment専用シークレットの
+    # ままだったため、以後@stagingへのnpm publishが認証エラー(ENEEDAUTH)で全て失敗し続けていた
+    # (未検知のまま2週間以上放置)。ユーザー判断により、承認不要より既存シークレットの再利用を
+    # 優先し環境参照を復活。以後@staging publishもbash0816さんの手動承認(Deployment approval)が
+    # 必要になる。
     steps:
       - name: Validate inputs
         env:
