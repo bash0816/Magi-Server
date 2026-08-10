@@ -24,5 +24,4 @@ magi-server restart  # Restart Magi Hub
 
 ## Links
 
-- [Magi System](https://magi-system.app) — Main application
 - [npm package](https://www.npmjs.com/package/@bash0816/magi-server)
