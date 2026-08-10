@@ -29,7 +29,7 @@
         },
         {
           "id": "claude-sonnet-5",
-          "label": "Claude Sonnet 5 [TEST]",
+          "label": "Claude Sonnet 5",
           "transport": ["cli", "api"],
           "available_from": "2026-06-30",
           "deprecated_at": null,
