@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node --test scripts/__tests__/*.test.mjs"
+  }
+}
