@@ -1,0 +1,53 @@
+name: model-new-watch
+
+on:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: model-new-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  detect-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Detect new models
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.MODEL_WATCH_ANTHROPIC_KEY }}
+          OPENAI_API_KEY: ${{ secrets.MODEL_WATCH_OPENAI_KEY }}
+          GEMINI_API_KEY: ${{ secrets.MODEL_WATCH_GEMINI_KEY }}
+        run: |
+          node scripts/detect-new-models.mjs > /tmp/detected.json
+          cat /tmp/detected.json
+
+      - name: Create or update PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat /tmp/detected.json | node scripts/create-model-update-pr.mjs
+
+      - name: Report health
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ $? -eq 0 ]; then
+            node scripts/model-new-watch-health-check.mjs --mode success
+          else
+            node scripts/model-new-watch-health-check.mjs --mode failure
+          fi
