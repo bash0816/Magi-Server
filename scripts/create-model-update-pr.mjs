@@ -41,15 +41,13 @@ function createHttpError(label, status, body) {
 }
 
 async function readResponseBody(response) {
+  // 実Fetch APIのResponseはbodyを一度しか読めないため、response.json()を先に試して
+  // 失敗後にresponse.text()へフォールバックすると「Body is unusable」で失敗する
+  // (STEP9検証レビュー1回目マージ前必須条件対応)。同一レスポンスに対しjson()とtext()を
+  // 両方呼ばないよう、text()が使えればそちらを優先し(JSON.parseで復元)、text()を
+  // 持たない簡易モック向けにjson()単独呼び出しへフォールバックする
   if (!response) {
     return null;
-  }
-  if (typeof response.json === "function") {
-    try {
-      return await response.json();
-    } catch (_error) {
-      // Fall through to text.
-    }
   }
   if (typeof response.text === "function") {
     const text = await response.text();
@@ -60,6 +58,13 @@ async function readResponseBody(response) {
       return JSON.parse(text);
     } catch (_error) {
       return text;
+    }
+  }
+  if (typeof response.json === "function") {
+    try {
+      return await response.json();
+    } catch (_error) {
+      return null;
     }
   }
   return null;

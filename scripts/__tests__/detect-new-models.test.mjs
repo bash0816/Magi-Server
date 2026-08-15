@@ -292,6 +292,37 @@ test("Claude: 実Fetch APIのResponseオブジェクト(bodyは一度しか読�
   assert(claudeResult.candidates.needsReview.includes("claude-4-opus"));
 });
 
+test("OpenAI: 実Fetch APIで非JSON(HTML)の502エラー応答を受けてもエラーメッセージに本文が含まれる（STEP9検証レビュー1回目マージ前必須条件対応の回帰テスト）", async () => {
+  // readResponseBody()がresponse.json()を先に試して失敗後にresponse.text()へ
+  // フォールバックする実装のままだと、実Fetch APIでは「Body is unusable」で
+  // 本来のHTTPエラー詳細(HTML本文)が失われる。GitHub Actions runnerがOpenAI API
+  // ではなくエッジのHTML 502ページを返すようなケースを模して検証する
+  const currentModelsJson = buildCurrentModelsJson();
+  const results = await detectNewModels({
+    fetchFn: async (url) => {
+      if (typeof url === "string" && url.includes("claude.com")) {
+        return new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } });
+      }
+      if (typeof url === "string" && url.includes("openai.com")) {
+        return new Response("<html>bad gateway</html>", { status: 502 });
+      }
+      return new Response(JSON.stringify({ models: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+    currentModelsJson: JSON.stringify(currentModelsJson),
+    state: { providers: { openai: { observedIds: [] } } },
+    openaiApiKey: "openai-key",
+    geminiApiKey: "gemini-key",
+  });
+
+  const openaiResult = results.find(r => r.provider === "openai");
+  assert.equal(openaiResult.status, "error");
+  assert.match(openaiResult.error, /502/);
+  assert.match(openaiResult.error, /bad gateway/);
+});
+
 test("新規モデルなしなら hasNew は false", async () => {
   const currentModelsJson = buildCurrentModelsJson();
   const calls = [];
