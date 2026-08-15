@@ -88,6 +88,12 @@ test("model-new-watch.yml の基本構造を検証", () => {
   assert.match(content, /contents:\s*write/);
   assert.match(content, /pull-requests:\s*write/);
   assert.match(content, /issues:\s*write/);
+
+  // 6. jobレベルでmodel-watch Environmentを指定していることを検証
+  // (Environment secretsとしてMODEL_WATCH_OPENAI_KEY/MODEL_WATCH_GEMINI_KEYを
+  // スコープするため。cron自動実行を止めないよう、このEnvironmentには
+  // Required reviewers等の保護ルールを設定しないこと)
+  assert.match(content, /environment:\s*model-watch/);
 });
 
 test("単一オーケストレーター: 本処理stepが1つのみであることを検証（checkout/setup-nodeは準備step）", () => {

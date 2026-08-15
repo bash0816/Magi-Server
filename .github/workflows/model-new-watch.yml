@@ -17,6 +17,7 @@ permissions:
 jobs:
   detect-and-update:
     runs-on: ubuntu-latest
+    environment: model-watch
     steps:
       - uses: actions/checkout@v4
         with:
