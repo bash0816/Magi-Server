@@ -6,6 +6,9 @@
  * listOpenIssues/findIssue/createIssue/addComment を import して使う薄いラッパー。
  */
 
+import { listOpenIssues as defaultListOpenIssues, findIssue as defaultFindIssue, createIssue as defaultCreateIssue, addComment as defaultAddComment } from "./sync-models-json-health-check.mjs";
+import { recordObservedIds as defaultRecordObservedIds } from "./model-watch-state.mjs";
+
 /**
  * 要確認候補をGitHub Issueで通知する
  *
@@ -21,13 +24,16 @@
  *
  * @param {string} provider - プロバイダー名("gemini" | "claude")
  * @param {string[]} needsReviewIds - 今回取得した要確認候補ID一覧
- * @param {object} deps - 依存注入オブジェクト
+ * @param {object} deps - 依存注入オブジェクト。listOpenIssues/findIssue/createIssue/
+ *   addComment/recordObservedIdsは未指定時、scripts/sync-models-json-health-check.mjs・
+ *   scripts/model-watch-state.mjs の実実装を既定として使う(テスト時はdeps経由でモックに
+ *   差し替え可能)
  *   - state: 状態ファイル内容（{ version: 1, providers: { gemini?: { needsReviewNotified?: [...] }, ... } }）
- *   - listOpenIssues: async (deps) => Issue[] 関数
- *   - findIssue: async (deps, issues, title) => Issue | undefined 関数
- *   - createIssue: async (deps, title, body) => { number, html_url } 関数
- *   - addComment: async (deps, issueNumber, body) => { id } 関数
- *   - recordObservedIds: async (provider, ids, deps) => { success: true } 関数
+ *   - listOpenIssues?: async (deps) => Issue[] 関数
+ *   - findIssue?: (openIssues, issueTitle) => Issue | undefined 関数(同期)
+ *   - createIssue?: async (deps, { title, body }) => { number, html_url } 関数
+ *   - addComment?: async (deps, issueNumber, body) => { id } 関数
+ *   - recordObservedIds?: async (provider, ids, deps) => { success: true } 関数
  *   - githubToken: GitHub token 文字列
  * @returns {Promise<{status: "success" | "noop", stateUpdateFailed?: boolean}>}
  *   - {status: "noop"}: 差分0件
@@ -36,6 +42,12 @@
  * @throws {Error} Issue通知失敗時
  */
 export async function notifyNeedsReview(provider, needsReviewIds, deps) {
+  const listOpenIssuesFn = deps.listOpenIssues ?? defaultListOpenIssues;
+  const findIssueFn = deps.findIssue ?? defaultFindIssue;
+  const createIssueFn = deps.createIssue ?? defaultCreateIssue;
+  const addCommentFn = deps.addComment ?? defaultAddComment;
+  const recordObservedIdsFn = deps.recordObservedIds ?? defaultRecordObservedIds;
+
   // 状態ファイルが存在しない場合は、通知対象を判定できないため noop
   if (!deps.state) {
     return { status: "noop" };
@@ -54,8 +66,10 @@ export async function notifyNeedsReview(provider, needsReviewIds, deps) {
   const issueTitle = getIssueTitle(provider);
 
   // 3.1 既存Issueを検索
-  const issues = await deps.listOpenIssues(deps);
-  const existingIssue = await deps.findIssue(deps, issues, issueTitle);
+  // findIssue(openIssues, issueTitle) は同期関数(scripts/sync-models-json-health-check.mjs:81)
+  const issues = await listOpenIssuesFn(deps);
+  // findIssue自体は同期関数だが、テストダブル(async関数)との互換性のためawaitする
+  const existingIssue = await findIssueFn(issues, issueTitle);
 
   // 3.2 Issue本文（未通知ID一覧を記載）
   const issueBody = buildIssueBody(provider, unnotifiedIds);
@@ -64,17 +78,19 @@ export async function notifyNeedsReview(provider, needsReviewIds, deps) {
   let issueNumber;
   if (!existingIssue) {
     // 既存Issueがない → 新規作成
-    const createdIssue = await deps.createIssue(deps, issueTitle, issueBody);
+    // createIssue(deps, body) の body は { title, body } オブジェクト
+    // (scripts/sync-models-json-health-check.mjs:141)
+    const createdIssue = await createIssueFn(deps, { title: issueTitle, body: issueBody });
     issueNumber = createdIssue.number;
   } else {
     // 既存Issueがある → コメント追加
     issueNumber = existingIssue.number;
-    await deps.addComment(deps, issueNumber, issueBody);
+    await addCommentFn(deps, issueNumber, issueBody);
   }
 
   // 4. Issue通知成功後にのみ、状態ファイルへ差分IDを追記
   try {
-    await deps.recordObservedIds(provider, unnotifiedIds, deps);
+    await recordObservedIdsFn(provider, unnotifiedIds, deps);
     // 状態更新成功
     return { status: "success" };
   } catch (stateUpdateError) {

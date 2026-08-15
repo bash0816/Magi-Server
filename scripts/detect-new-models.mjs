@@ -64,6 +64,23 @@ async function requestJson(fetchFn, url, init) {
   return { response, body };
 }
 
+async function readResponseText(response) {
+  if (!response || typeof response.text !== "function") {
+    return null;
+  }
+  return await response.text();
+}
+
+async function requestText(fetchFn, url, init) {
+  // Claudeのスクレイピング応答はHTMLであり、requestJson()/readResponseBody()のように
+  // 先にresponse.json()を試すと、実Fetch APIのResponseはbodyを一度しか読めないため
+  // 後続のresponse.text()が「Body is unusable」で失敗する（STEP8コーディングレビュー
+  // 1回目Blocker2対応）。text専用の読み込みに一本化する
+  const response = await fetchFn(url, init);
+  const body = await readResponseText(response);
+  return { response, body };
+}
+
 function parseCurrentModelsJson(currentModelsJson) {
   if (typeof currentModelsJson === "string") {
     try {
@@ -188,7 +205,7 @@ function collectNewEntriesForProvider(providerKey, candidateModels, existingIds,
 async function fetchClaudeModels(fetchFn) {
   // Claude: スクレイピング方式（APIキー不要、認証なしGET）
   const scrapingUrl = "https://platform.claude.com/docs/en/release-notes/api";
-  const result = await requestJson(fetchFn, scrapingUrl, {
+  const result = await requestText(fetchFn, scrapingUrl, {
     method: "GET",
   });
   if (result.response.status !== 200) {

@@ -111,12 +111,12 @@ describe("model-watch-needs-review", () => {
           assert.equal(deps.githubToken, "gh-token");
           return [];  // 既存Issue なし
         },
-        findIssue: async (deps, issues, title) => {
+        findIssue: (issues, title) => {
           calls.push("findIssue");
           // 返す必要なし（なければ新規作成へ進む）
           return undefined;
         },
-        createIssue: async (deps, title, body) => {
+        createIssue: async (deps, { title, body }) => {
           calls.push("createIssue");
           assert.match(title, /model-new-watch.*Gemini/);
           return { number: 100, html_url: "https://github.com/bash0816/Magi-Server/issues/100" };
@@ -161,12 +161,12 @@ describe("model-watch-needs-review", () => {
             },
           ];
         },
-        findIssue: async (deps, issues, title) => {
+        findIssue: (issues, title) => {
           calls.push("findIssue");
           // 既存Issue を返す
           return issues[0];
         },
-        createIssue: async (deps, title, body) => {
+        createIssue: async (deps, { title, body }) => {
           calls.push("createIssue");
           throw new Error("Should not be called when issue exists");
         },
@@ -284,7 +284,7 @@ describe("model-watch-needs-review", () => {
               user: { login: "github-actions[bot]" },
             },
           ],
-          findIssue: async (deps, issues) => issues[0],
+          findIssue: (issues) => issues[0],
           createIssue: async () => {
             throw new Error("Should not be called");
           },
@@ -365,7 +365,7 @@ describe("model-watch-needs-review", () => {
             user: { login: "github-actions[bot]" },
           },
         ],
-        findIssue: async (deps, issues) => issues[0],
+        findIssue: (issues) => issues[0],
         createIssue: async () => {
           throw new Error("Should not be called");
         },
@@ -424,7 +424,7 @@ describe("model-watch-needs-review", () => {
         },
         listOpenIssues: async () => [],
         findIssue: async () => undefined,
-        createIssue: async (deps, title, body) => {
+        createIssue: async (deps, { title, body }) => {
           titles.push({ provider: "gemini", title });
           return { number: 100 };
         },
@@ -443,7 +443,7 @@ describe("model-watch-needs-review", () => {
         },
         listOpenIssues: async () => [],
         findIssue: async () => undefined,
-        createIssue: async (deps, title, body) => {
+        createIssue: async (deps, { title, body }) => {
           titles.push({ provider: "claude", title });
           return { number: 101 };
         },

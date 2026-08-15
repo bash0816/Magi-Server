@@ -256,6 +256,42 @@ test("Claude: anthropicApiKey を渡さず呼び出しても機能し、スク�
   assert(Array.isArray(claudeResult.candidates.needsReview));
 });
 
+test("Claude: 実Fetch APIのResponseオブジェクト(bodyは一度しか読めない)でもスクレイピングが成功する（STEP8コーディングレビュー1回目Blocker2対応の回帰テスト）", async () => {
+  // makeResponse()のモックはjson()/text()が独立して呼べてしまうため、実Fetch APIの
+  // 「bodyは一度しか読めない」制約を再現できず、このバグを検出できなかった。
+  // ここでは実際のグローバルResponseクラスを使い、response.json()を先に試すと
+  // 後続のresponse.text()が失敗する実挙動を再現する
+  const currentModelsJson = buildCurrentModelsJson();
+  const results = await detectNewModels({
+    fetchFn: async (url) => {
+      if (typeof url === "string" && url.includes("claude.com")) {
+        return new Response("<html>claude-4-opus</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        });
+      }
+      if (typeof url === "string" && url.includes("openai.com")) {
+        return new Response(JSON.stringify({ data: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ models: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+    currentModelsJson: JSON.stringify(currentModelsJson),
+    state: { providers: { openai: { observedIds: [] } } },
+    openaiApiKey: "openai-key",
+    geminiApiKey: "gemini-key",
+  });
+
+  const claudeResult = results.find(r => r.provider === "claude");
+  assert.equal(claudeResult.status, "success");
+  assert(claudeResult.candidates.needsReview.includes("claude-4-opus"));
+});
+
 test("新規モデルなしなら hasNew は false", async () => {
   const currentModelsJson = buildCurrentModelsJson();
   const calls = [];
