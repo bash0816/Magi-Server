@@ -26,28 +26,9 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Detect new models
+      - name: Detect, create PR, and report health
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.MODEL_WATCH_ANTHROPIC_KEY }}
           OPENAI_API_KEY: ${{ secrets.MODEL_WATCH_OPENAI_KEY }}
           GEMINI_API_KEY: ${{ secrets.MODEL_WATCH_GEMINI_KEY }}
-        run: |
-          node scripts/detect-new-models.mjs > /tmp/detected.json
-          cat /tmp/detected.json
-
-      - name: Create or update PR
-        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cat /tmp/detected.json | node scripts/create-model-update-pr.mjs
-
-      - name: Report health
-        if: always()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ $? -eq 0 ]; then
-            node scripts/model-new-watch-health-check.mjs --mode success
-          else
-            node scripts/model-new-watch-health-check.mjs --mode failure
-          fi
+        run: node scripts/model-new-watch.mjs
