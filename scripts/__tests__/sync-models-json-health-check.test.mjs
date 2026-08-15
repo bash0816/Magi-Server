@@ -220,4 +220,151 @@ describe("sync-models-json-health-check", () => {
     assert.equal(result.action, "noop");
     assert.equal(called, false);
   });
+
+  describe("Export確認テスト", () => {
+    it("listOpenIssuesがexportされていること", async () => {
+      const mod = await loadScript();
+      assert.equal(typeof mod.listOpenIssues, "function", "listOpenIssuesはexportされるべき");
+    });
+
+    it("findIssueがexportされていること", async () => {
+      const mod = await loadScript();
+      assert.equal(typeof mod.findIssue, "function", "findIssueはexportされるべき");
+    });
+
+    it("createIssueがexportされていること", async () => {
+      const mod = await loadScript();
+      assert.equal(typeof mod.createIssue, "function", "createIssueはexportされるべき");
+    });
+
+    it("addCommentがexportされていること", async () => {
+      const mod = await loadScript();
+      assert.equal(typeof mod.addComment, "function", "addCommentはexportされるべき");
+    });
+
+    it("closeIssueがexportされていること", async () => {
+      const mod = await loadScript();
+      assert.equal(typeof mod.closeIssue, "function", "closeIssueはexportされるべき");
+    });
+  });
+
+  describe("ページネーション対応", () => {
+    it("listOpenIssuesがページネーション対応していること（Link: rel=nextを追跡）", async () => {
+      const mod = await loadScript();
+      const calls = [];
+
+      const result = await mod.listOpenIssues({
+        fetchFn: async (url, init) => {
+          calls.push({ url, init });
+          if (calls.length === 1) {
+            // 最初のページ：Link ヘッダーで次ページを指示
+            const response = makeResponse(200, [
+              { number: 1, title: "Issue 1", state: "open", pull_request: undefined, user: { login: "github-actions[bot]" } },
+              { number: 2, title: "Issue 2", state: "open", pull_request: undefined, user: { login: "github-actions[bot]" } },
+            ]);
+            // response.headers を模擬（Link ヘッダー）
+            response.headers = {
+              get: (name) => {
+                if (name.toLowerCase() === "link") {
+                  return '<https://api.github.com/repos/bash0816/Magi-Server/issues?state=open&per_page=100&page=2>; rel="next", <https://api.github.com/repos/bash0816/Magi-Server/issues?state=open&per_page=100&page=1>; rel="last"';
+                }
+                return null;
+              },
+            };
+            return response;
+          }
+          if (calls.length === 2) {
+            // 2ページ目：Link ヘッダーなし（最後のページ）
+            const response = makeResponse(200, [
+              { number: 3, title: "Issue 3", state: "open", pull_request: undefined, user: { login: "github-actions[bot]" } },
+            ]);
+            response.headers = { get: () => null };
+            return response;
+          }
+          throw new Error("Unexpected fetch call");
+        },
+        githubToken: "gh-token",
+      });
+
+      // 両ページのIssueがマージされたことを検証
+      assert.equal(result.length, 3, "2ページ分のIssueが統合されるべき");
+      assert.equal(result[0].number, 1);
+      assert.equal(result[1].number, 2);
+      assert.equal(result[2].number, 3);
+      assert.equal(calls.length, 2, "ページネーションで2回の呼び出しが発生するべき");
+    });
+
+    it("listOpenIssuesがLink ヘッダーなし（単一ページ）でも正常に動作すること", async () => {
+      const mod = await loadScript();
+      const calls = [];
+
+      const result = await mod.listOpenIssues({
+        fetchFn: async (url, init) => {
+          calls.push({ url, init });
+          const response = makeResponse(200, [
+            { number: 1, title: "Issue 1", state: "open", pull_request: undefined, user: { login: "github-actions[bot]" } },
+          ]);
+          response.headers = { get: () => null };
+          return response;
+        },
+        githubToken: "gh-token",
+      });
+
+      assert.equal(result.length, 1);
+      assert.equal(result[0].number, 1);
+      assert.equal(calls.length, 1, "リンクがない場合は1回の呼び出しのみ");
+    });
+  });
+
+  describe("既存関数の挙動確認（変更なし）", () => {
+    it("reportSyncFailureが既存の挙動を保つこと", async () => {
+      const mod = await loadScript();
+      const calls = [];
+
+      const result = await mod.reportSyncFailure({
+        fetchFn: async (url, init) => {
+          calls.push({ url, init });
+          if (calls.length === 1) {
+            return makeResponse(200, []);
+          }
+          const body = JSON.parse(init.body);
+          assert.equal(body.title, "[sync-models-json] 実行失敗");
+          return makeResponse(201, { number: 100, html_url: "https://github.com/bash0816/Magi-Server/issues/100" });
+        },
+        githubToken: "gh-token",
+        failureMessage: "test failure",
+      });
+
+      assert.equal(result.action, "created");
+      assert.equal(result.issueNumber, 100);
+    });
+
+    it("reportSyncSuccessが既存の挙動を保つこと", async () => {
+      const mod = await loadScript();
+      const calls = [];
+
+      const result = await mod.reportSyncSuccess({
+        fetchFn: async (url, init) => {
+          calls.push({ url, init });
+          if (calls.length === 1) {
+            return makeResponse(200, [
+              {
+                number: 99,
+                title: "[sync-models-json] 実行失敗",
+                state: "open",
+                pull_request: undefined,
+                user: { login: "github-actions[bot]" },
+              },
+            ]);
+          }
+          assert.equal(init.method, "PATCH");
+          return makeResponse(200, { number: 99, state: "closed" });
+        },
+        githubToken: "gh-token",
+      });
+
+      assert.equal(result.action, "closed");
+      assert.equal(result.issueNumber, 99);
+    });
+  });
 });
