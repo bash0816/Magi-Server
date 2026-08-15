@@ -91,15 +91,21 @@ describe('model-new-watch main(deps)', () => {
   describe('step 3.5: early OpenAI observed-id recording', () => {
     test('observedIdsToRecord is recorded before PR creation', async () => {
       const order = []
+      const recordedIds = []
       deps.detectNewModels = async () => [result('openai', { observedIdsToRecord: ['baseline', 'denylisted'], candidates: { autoAdd: [{ id: 'gpt-new' }], needsReview: [] } })]
       deps.recordObservedIds = async (provider, ids) => {
         order.push('record')
         assert.equal(provider, 'openai')
-        assert.deepEqual(ids, ['baseline', 'denylisted'])
+        recordedIds.push(ids)
       }
       deps.createModelUpdatePr = async () => { order.push('pr') }
       await run()
-      assert.deepEqual(order, ['record'])
+      // observedIdsToRecord(denylist該当分)の記録(ステップ3.5)はPR作成の成否と無関係に
+      // 即座に行われ、同じ結果にcandidates.autoAdd(denylist非該当の新規候補)が含まれる
+      // 場合はPR作成(ステップ4)も別途行われ、PR成功後に改めてautoAdd候補IDが記録される
+      // (ステップ5)。design.md「単一オーケストレーター方式」節ステップ3.5・4・5は独立
+      assert.deepEqual(order, ['record', 'pr', 'record'])
+      assert.deepEqual(recordedIds, [['baseline', 'denylisted'], ['gpt-new']])
     })
     test('an initial baseline records all returned IDs', async () => {
       deps.detectNewModels = async () => [result('openai', { observedIdsToRecord: ['model-a', 'model-b'] })]
@@ -137,7 +143,7 @@ describe('model-new-watch main(deps)', () => {
     })
     test('after a failed PR, a subsequent run still does not record the candidate', async () => {
       deps.detectNewModels = async () => [result('openai', { candidates: { autoAdd: [{ id: 'gpt-new' }], needsReview: [] } })]
-      deps.createModelUpdatePr = async () => { throw new Error('PR failed') }
+      deps.createModelUpdatePr = async (d) => { calls.push(['createModelUpdatePr', d]); throw new Error('PR failed') }
       await run()
       assert.equal(records().length, 0)
       calls.length = 0
@@ -175,7 +181,8 @@ describe('model-new-watch main(deps)', () => {
         result('gemini', { candidates: { autoAdd: [], needsReview: ['gemini-new'] } }),
         result('claude', { candidates: { autoAdd: [], needsReview: ['claude-new'] } }),
       ]
-      deps.notifyNeedsReview = async (provider) => {
+      deps.notifyNeedsReview = async (provider, ids, d) => {
+        calls.push(['notifyNeedsReview', provider, ids, d])
         if (provider === 'gemini') throw new Error('gemini failed')
         return { status: 'success' }
       }
@@ -201,7 +208,7 @@ describe('model-new-watch main(deps)', () => {
     test('failure reporting itself propagates without an init report', async () => {
       deps.detectNewModels = async () => [{ provider: 'openai', status: 'error', error: 'API failed' }]
       const error = new Error('failure report failed')
-      deps.reportModelNewWatchFailure = async () => { throw error }
+      deps.reportModelNewWatchFailure = async (d) => { calls.push(['reportModelNewWatchFailure', d]); throw error }
       await assert.rejects(run(), (actual) => actual === error)
       assert.equal(calls.filter(([name]) => name === 'reportModelNewWatchFailure').length, 1)
     })
