@@ -185,18 +185,39 @@ function collectNewEntriesForProvider(providerKey, candidateModels, existingIds,
   }
 }
 
-async function fetchClaudeModels(fetchFn, anthropicApiKey) {
-  const result = await requestJson(fetchFn, CLAUDE_MODELS_URL, {
+async function fetchClaudeModels(fetchFn) {
+  // Claude: スクレイピング方式（APIキー不要、認証なしGET）
+  const scrapingUrl = "https://platform.claude.com/docs/en/release-notes/api";
+  const result = await requestJson(fetchFn, scrapingUrl, {
     method: "GET",
-    headers: {
-      "x-api-key": anthropicApiKey,
-    },
   });
   if (result.response.status !== 200) {
-    throw createHttpError("Anthropic モデル一覧取得", result.response.status, result.body);
+    throw createHttpError("Claude モデル一覧取得", result.response.status, result.body);
   }
-  const body = result.body && typeof result.body === "object" ? result.body : {};
-  return ensureArray(body.data, "Anthropic response.data");
+  const html = typeof result.body === "string" ? result.body : "";
+  // 正規表現でID候補を抽出
+  const matches = html.match(/claude-[a-z0-9.-]+/gi) || [];
+  const candidates = [...new Set(matches)]; // 重複除去
+
+  // denylist パターン
+  const denylistPatterns = [
+    /^claude-api$/i,
+    /^claude-code$/i,
+    /^claude-generated$/i,
+    /^claude-managed-agents$/i,
+    /^claude-on-/i,
+    /^claude-platform-/i,
+    /^claude-prompting-/i,
+    /^claude-in-/i,
+  ];
+
+  // denylist に合致しないもののみをIDとして返す
+  const filtered = candidates.filter((id) => {
+    return !denylistPatterns.some((pattern) => pattern.test(id));
+  });
+
+  // API レスポンスのようなオブジェクト形式で返す（collectNewEntriesForProvider との互換性）
+  return filtered.map((id) => ({ id, name: id }));
 }
 
 async function fetchOpenAiModels(fetchFn, openaiApiKey) {
@@ -224,7 +245,14 @@ async function fetchGeminiModels(fetchFn, geminiApiKey) {
 }
 
 function isOpenAiTargetModel(id) {
+  // OpenAI 対象prefix: gpt, o1, o3, o4 のみ
   return /^(gpt|o1|o3|o4)/.test(id);
+}
+
+function isOpenAiDenied(id) {
+  // OpenAI denylist keywords
+  const denylistKeywords = ["realtime", "transcribe", "tts", "audio", "image", "search", "embedding", "moderation", "whisper", "instruct", "davinci", "babbage"];
+  return denylistKeywords.some((keyword) => id.includes(keyword));
 }
 
 function isGeminiDenied(id) {
@@ -237,7 +265,7 @@ export async function detectNewModels(deps = {}) {
   const {
     fetchFn = globalThis.fetch,
     currentModelsJson,
-    anthropicApiKey,
+    state = {},
     openaiApiKey,
     geminiApiKey,
   } = deps;
@@ -245,7 +273,6 @@ export async function detectNewModels(deps = {}) {
   if (typeof fetchFn !== "function") {
     throw new Error("fetchFn が必要です");
   }
-  ensureString(anthropicApiKey, "anthropicApiKey");
   ensureString(openaiApiKey, "openaiApiKey");
   ensureString(geminiApiKey, "geminiApiKey");
 
@@ -255,106 +282,228 @@ export async function detectNewModels(deps = {}) {
   const existingIds = extractExistingIds(parsedCurrentModelsJson);
   const today = new Date().toISOString().slice(0, 10);
   const updatedModelsJson = cloneCurrentModelsJson(parsedCurrentModelsJson);
-  const newEntries = {};
-  const geminiNeedsReview = [];
 
-  const [claudeModels, openAiModels, geminiModels] = await Promise.all([
-    fetchClaudeModels(fetchFn, anthropicApiKey),
+  // Promise.allSettled で個別の失敗を分離
+  const results = await Promise.allSettled([
+    fetchClaudeModels(fetchFn),
     fetchOpenAiModels(fetchFn, openaiApiKey),
     fetchGeminiModels(fetchFn, geminiApiKey),
   ]);
 
-  const claudeTargets = claudeModels.filter((model) => typeof model?.id === "string" && model.id.startsWith("claude"));
-  collectNewEntriesForProvider("claude", claudeTargets, existingIds, today, newEntries, updatedModelsJson);
+  // 各プロバイダーの結果を ProviderResult[] に変換
+  const providerResults = [];
 
-  const openAiTargets = openAiModels.filter((model) => typeof model?.id === "string" && isOpenAiTargetModel(model.id));
-  collectNewEntriesForProvider("openai", openAiTargets, existingIds, today, newEntries, updatedModelsJson);
+  // Claude (index 0)
+  {
+    const claudeResult = results[0];
+    if (claudeResult.status === "fulfilled") {
+      try {
+        const claudeModels = claudeResult.value;
+        const claudeTargets = claudeModels.filter((model) => typeof model?.id === "string");
+        const needsReviewIds = [];
+        const newEntries = [];
 
-  for (const model of geminiModels) {
-    if (!model || typeof model !== "object") {
-      continue;
-    }
-    const id = normalizeModelId(model.id ?? model.name);
-    if (!id || !id.startsWith("gemini-")) {
-      continue;
-    }
-    const supportedGenerationMethods = Array.isArray(model.supportedGenerationMethods) ? model.supportedGenerationMethods : [];
-    if (!supportedGenerationMethods.includes("generateContent")) {
-      continue;
-    }
-    if (isGeminiDenied(id)) {
-      continue;
-    }
-    if (!GEMINI_ALLOWLIST.test(id)) {
-      if (!geminiNeedsReview.includes(id)) {
-        geminiNeedsReview.push(id);
+        for (const model of claudeTargets) {
+          const id = normalizeModelId(model.id ?? model.name);
+          if (!id || !id.toLowerCase().startsWith("claude-")) {
+            continue;
+          }
+          if (existingIds.has(id)) {
+            continue;
+          }
+          // Claude: 全件が needsReview（自動追加なし）
+          if (!needsReviewIds.includes(id)) {
+            needsReviewIds.push(id);
+          }
+        }
+
+        providerResults.push({
+          provider: "claude",
+          status: "success",
+          candidates: {
+            autoAdd: [], // Claude は常に空配列
+            needsReview: needsReviewIds,
+          },
+        });
+      } catch (error) {
+        providerResults.push({
+          provider: "claude",
+          status: "error",
+          error: error?.message ?? String(error),
+        });
       }
-      continue;
+    } else {
+      providerResults.push({
+        provider: "claude",
+        status: "error",
+        error: claudeResult.reason?.message ?? String(claudeResult.reason),
+      });
     }
-    if (existingIds.has(id)) {
-      continue;
-    }
-    existingIds.add(id);
-    const entry = buildEntry(id, getDisplayName(model) || id, today);
-    if (!newEntries.gemini) {
-      newEntries.gemini = [];
-    }
-    newEntries.gemini.push(entry);
-    updatedModelsJson.providers.gemini.models.unshift(entry);
   }
 
-  const hasNew = Object.values(newEntries).some((entries) => Array.isArray(entries) && entries.length > 0);
+  // OpenAI (index 1)
+  {
+    const openaiResult = results[1];
+    if (openaiResult.status === "fulfilled") {
+      try {
+        const openAiModels = openaiResult.value;
+        const observedIds = state?.providers?.openai?.observedIds;
+        const autoAddEntries = [];
+        const observedIdsToRecord = [];
 
-  return {
-    hasNew,
-    newEntries,
-    geminiNeedsReview,
-    updatedModelsJson,
-  };
+        // 対象prefix でフィルタリング
+        const targetModels = openAiModels.filter((model) => typeof model?.id === "string" && isOpenAiTargetModel(model.id));
+
+        // 初回判定：observedIds === undefined
+        if (observedIds === undefined) {
+          // 初回導入時：対象IDすべてをobservedIdsToRecordへ、検知なし
+          for (const model of targetModels) {
+            if (typeof model?.id === "string") {
+              const id = model.id.trim();
+              if (id && !observedIdsToRecord.includes(id)) {
+                observedIdsToRecord.push(id);
+              }
+            }
+          }
+        } else {
+          // 2回目以降：observedIdsとの差分を抽出
+          const observedSet = new Set(observedIds || []);
+          for (const model of targetModels) {
+            if (typeof model?.id !== "string") {
+              continue;
+            }
+            const id = model.id.trim();
+            if (!id) {
+              continue;
+            }
+
+            // observedIds に含まれないIDが未観測
+            if (!observedSet.has(id)) {
+              // denylist チェック
+              if (isOpenAiDenied(id)) {
+                // denylist 該当分は observedIdsToRecord に含める（検知なし）
+                if (!observedIdsToRecord.includes(id)) {
+                  observedIdsToRecord.push(id);
+                }
+              } else {
+                // denylist 非該当分は自動追加候補
+                if (!existingIds.has(id)) {
+                  existingIds.add(id);
+                  const entry = buildEntry(id, getDisplayName(model) || id, today);
+                  autoAddEntries.push(entry);
+                }
+              }
+            }
+          }
+        }
+
+        const result = {
+          provider: "openai",
+          status: "success",
+          candidates: {
+            autoAdd: autoAddEntries,
+            needsReview: [], // OpenAI は常に空配列
+          },
+        };
+        if (observedIdsToRecord.length > 0) {
+          result.observedIdsToRecord = observedIdsToRecord;
+        }
+        providerResults.push(result);
+      } catch (error) {
+        providerResults.push({
+          provider: "openai",
+          status: "error",
+          error: error?.message ?? String(error),
+        });
+      }
+    } else {
+      providerResults.push({
+        provider: "openai",
+        status: "error",
+        error: openaiResult.reason?.message ?? String(openaiResult.reason),
+      });
+    }
+  }
+
+  // Gemini (index 2)
+  {
+    const geminiResult = results[2];
+    if (geminiResult.status === "fulfilled") {
+      try {
+        const geminiModels = geminiResult.value;
+        const autoAddEntries = [];
+        const needsReviewIds = [];
+
+        for (const model of geminiModels) {
+          if (!model || typeof model !== "object") {
+            continue;
+          }
+          const id = normalizeModelId(model.id ?? model.name);
+          if (!id || !id.startsWith("gemini-")) {
+            continue;
+          }
+          const supportedGenerationMethods = Array.isArray(model.supportedGenerationMethods) ? model.supportedGenerationMethods : [];
+          if (!supportedGenerationMethods.includes("generateContent")) {
+            continue;
+          }
+          if (isGeminiDenied(id)) {
+            continue;
+          }
+          if (!GEMINI_ALLOWLIST.test(id)) {
+            // allowlist 不合致だが generateContent 対応 → needsReview
+            if (!needsReviewIds.includes(id)) {
+              needsReviewIds.push(id);
+            }
+            continue;
+          }
+          if (existingIds.has(id)) {
+            continue;
+          }
+          existingIds.add(id);
+          const entry = buildEntry(id, getDisplayName(model) || id, today);
+          autoAddEntries.push(entry);
+        }
+
+        providerResults.push({
+          provider: "gemini",
+          status: "success",
+          candidates: {
+            autoAdd: autoAddEntries,
+            needsReview: needsReviewIds,
+          },
+        });
+      } catch (error) {
+        providerResults.push({
+          provider: "gemini",
+          status: "error",
+          error: error?.message ?? String(error),
+        });
+      }
+    } else {
+      providerResults.push({
+        provider: "gemini",
+        status: "error",
+        error: geminiResult.reason?.message ?? String(geminiResult.reason),
+      });
+    }
+  }
+
+  return providerResults;
 }
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
 
-async function readRepoModelsJson(deps = {}) {
+export async function readRepoModelsJson(deps = {}) {
   const { readFileFn = fs.readFileSync, repoRoot = DEFAULT_REPO_ROOT } = deps;
   const raw = await Promise.resolve(readFileFn(path.join(repoRoot, 'data/models.json'), 'utf8'));
   return typeof raw === 'string' ? raw : String(raw);
 }
 
+// 過渡期：テストとの互換性のためのダミー main 関数
+// 新オーケストレーター (scripts/model-new-watch.mjs) へ移行したため本体は削除
 export async function main(deps = {}) {
-  const {
-    env = process.env,
-    console: logger = console,
-    writeFn = (text) => process.stdout.write(text),
-  } = deps;
-
-  const anthropicApiKey = env.ANTHROPIC_API_KEY;
-  const openaiApiKey = env.OPENAI_API_KEY;
-  const geminiApiKey = env.GEMINI_API_KEY;
-
-  ensureString(anthropicApiKey, 'ANTHROPIC_API_KEY');
-  ensureString(openaiApiKey, 'OPENAI_API_KEY');
-  ensureString(geminiApiKey, 'GEMINI_API_KEY');
-
-  const currentModelsJson = await readRepoModelsJson(deps);
-  const result = await detectNewModels({
-    ...deps,
-    currentModelsJson,
-    anthropicApiKey,
-    openaiApiKey,
-    geminiApiKey,
-  });
-
-  writeFn(JSON.stringify(result, null, 2) + '\n');
-  return result;
+  throw new Error("main() は廃止されました。scripts/model-new-watch.mjs へ移行してください");
 }
 
 export default detectNewModels;
-
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch((error) => {
-    console.error('[detect-new-models] ' + (error?.message ?? error));
-    process.exitCode = 1;
-  });
-}
