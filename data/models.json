@@ -104,8 +104,8 @@
             "api"
           ],
           "available_from": "2026-04-23",
-          "deprecated_at": "2026-07-09",
-          "shutdown_at": "2026-07-28"
+          "deprecated_at": null,
+          "shutdown_at": null
         },
         {
           "id": "gpt-5.4",
@@ -115,8 +115,8 @@
             "api"
           ],
           "available_from": "2026-03-05",
-          "deprecated_at": "2026-07-09",
-          "shutdown_at": "2026-07-28"
+          "deprecated_at": null,
+          "shutdown_at": null
         },
         {
           "id": "gpt-5.4-mini",
