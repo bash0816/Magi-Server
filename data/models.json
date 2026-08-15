@@ -186,8 +186,8 @@
             "api"
           ],
           "available_from": "2026-04-01",
-          "deprecated_at": "2026-05-19",
-          "shutdown_at": "2026-07-28"
+          "deprecated_at": null,
+          "shutdown_at": null
         },
         {
           "id": "gemini-3-flash",
