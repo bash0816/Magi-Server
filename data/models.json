@@ -254,6 +254,7 @@
           "id": "gemini-3.7-flash",
           "label": "Gemini 3.7 Flash",
           "transport": [
+            "cli",
             "api"
           ],
           "available_from": "2026-08-15",
