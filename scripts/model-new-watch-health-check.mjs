@@ -8,12 +8,39 @@ import {
 
 const DEFAULT_ISSUE_TITLE = "[model-new-watch] 実行失敗";
 
+function buildModelNewWatchFailureBody({ failureMessage, runUrl, failedProviders }) {
+  const lines = [
+    "モデル新規検知処理が失敗しました。",
+    "",
+    `- failure: ${failureMessage || "unknown"}`,
+  ];
+
+  if (failedProviders && failedProviders.length > 0) {
+    lines.push(`- failed providers: ${failedProviders.join(", ")}`);
+  }
+
+  if (runUrl) {
+    lines.push(`- run: ${runUrl}`);
+  }
+
+  return lines.join("\n");
+}
+
 export async function reportModelNewWatchFailure(deps = {}) {
+  const { failedProviders, failureMessage: customFailureMessage, runUrl } = deps;
+
+  // failedProviders が存在する場合、カスタムの本文ビルダーを使う
+  const customBody = buildModelNewWatchFailureBody({
+    failureMessage: customFailureMessage ?? "モデル新規検知処理が失敗しました",
+    runUrl,
+    failedProviders,
+  });
+
   return reportSyncFailure({
     ...deps,
     issueTitle: DEFAULT_ISSUE_TITLE,
-    failureMessage: deps.failureMessage ?? "モデル新規検知処理が失敗しました",
-    runUrl: deps.runUrl,
+    failureMessage: customBody,
+    runUrl: undefined, // runUrl は customBody に統合済みなので、重複を避ける
   });
 }
 

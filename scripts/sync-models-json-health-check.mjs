@@ -78,7 +78,7 @@ function normalizeIssues(openIssues) {
   return Array.isArray(openIssues) ? openIssues : null;
 }
 
-function findIssue(openIssues, issueTitle) {
+export function findIssue(openIssues, issueTitle) {
   return (openIssues ?? []).find((issue) =>
     issue &&
     issue.title === issueTitle &&
@@ -100,7 +100,7 @@ function buildFailureBody({ failureMessage, runUrl }) {
   return lines.join("\n");
 }
 
-async function listOpenIssues(deps) {
+export async function listOpenIssues(deps) {
   const openIssues = normalizeIssues(deps.openIssues);
   if (openIssues) {
     return openIssues;
@@ -112,19 +112,33 @@ async function listOpenIssues(deps) {
   }
   assertGitHubToken(githubToken);
 
-  const result = await requestJson(fetchFn, buildIssuesUrl(repoOwner, repoName), {
-    method: "GET",
-    headers: buildHeaders(githubToken),
-  });
+  let url = buildIssuesUrl(repoOwner, repoName);
+  const allIssues = [];
 
-  if (result.response.status !== 200) {
-    throw createHttpError("GitHub Issues 一覧取得", result.response.status, result.body);
+  while (url) {
+    const result = await requestJson(fetchFn, url, {
+      method: "GET",
+      headers: buildHeaders(githubToken),
+    });
+
+    if (result.response.status !== 200) {
+      throw createHttpError("GitHub Issues 一覧取得", result.response.status, result.body);
+    }
+
+    if (Array.isArray(result.body)) {
+      allIssues.push(...result.body);
+    }
+
+    // Link ヘッダーから次ページの URL を抽出（rel="next"を追跡）
+    const link = typeof result.response.headers?.get === "function" ? result.response.headers.get("link") : null;
+    const next = link?.match(/<([^>]+)>;\s*rel="next"/i);
+    url = next?.[1] ?? null;
   }
 
-  return Array.isArray(result.body) ? result.body : [];
+  return allIssues;
 }
 
-async function createIssue(deps, body) {
+export async function createIssue(deps, body) {
   const { fetchFn, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
   const result = await requestJson(fetchFn, `${GITHUB_API_BASE}/repos/${encodeURIComponent(repoOwner)}/${encodeURIComponent(repoName)}/issues`, {
     method: "POST",
@@ -142,7 +156,7 @@ async function createIssue(deps, body) {
   return result.body ?? {};
 }
 
-async function addComment(deps, issueNumber, body) {
+export async function addComment(deps, issueNumber, body) {
   const { fetchFn, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
   const result = await requestJson(fetchFn, buildCommentUrl(repoOwner, repoName, issueNumber), {
     method: "POST",
@@ -160,7 +174,7 @@ async function addComment(deps, issueNumber, body) {
   return result.body ?? {};
 }
 
-async function closeIssue(deps, issueNumber) {
+export async function closeIssue(deps, issueNumber) {
   const { fetchFn, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
   const result = await requestJson(fetchFn, buildIssueUrl(repoOwner, repoName, issueNumber), {
     method: "PATCH",
