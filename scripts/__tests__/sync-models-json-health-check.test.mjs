@@ -248,6 +248,55 @@ describe("sync-models-json-health-check", () => {
     });
   });
 
+  describe("fetchFn未指定時のデフォルト解決（実運用でのバグを踏まえた回帰テスト）", () => {
+    // listOpenIssues/createIssue/addComment/closeIssueにfetchFn = globalThis.fetchの
+    // デフォルト値が抜けていたため、model-new-watch.mjs(単一オーケストレーター)から
+    // 引数を明示せずに呼び出す実運用経路(node scripts/model-new-watch.mjs、main()を
+    // 引数なしで起動)で「fetchFn が必要です」により必ず失敗していた
+    // (2026-08-15、T5実機検証で発覚)。globalThis.fetchを一時的に差し替えて、
+    // fetchFnを渡さなくても呼び出せることを検証する
+    it("listOpenIssuesはfetchFnを渡さなくてもglobalThis.fetchへフォールバックすること", async () => {
+      const mod = await loadScript();
+      const originalFetch = globalThis.fetch;
+      const calls = [];
+      globalThis.fetch = async (url, init) => {
+        calls.push({ url, init });
+        return makeResponse(200, []);
+      };
+      try {
+        const result = await mod.listOpenIssues({ githubToken: "gh-token" });
+        assert.deepEqual(result, []);
+        assert.equal(calls.length, 1, "globalThis.fetchが呼ばれること");
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it("createIssue/addComment/closeIssueもfetchFnを渡さなくてもglobalThis.fetchへフォールバックすること", async () => {
+      const mod = await loadScript();
+      const originalFetch = globalThis.fetch;
+      const calls = [];
+      globalThis.fetch = async (url, init) => {
+        calls.push({ url, init });
+        if (init.method === "POST" && url.endsWith("/issues")) {
+          return makeResponse(201, { number: 1 });
+        }
+        if (init.method === "POST") {
+          return makeResponse(201, { id: 1 });
+        }
+        return makeResponse(200, { number: 1, state: "closed" });
+      };
+      try {
+        await mod.createIssue({ githubToken: "gh-token" }, { title: "t", body: "b" });
+        await mod.addComment({ githubToken: "gh-token" }, 1, "comment");
+        await mod.closeIssue({ githubToken: "gh-token" }, 1);
+        assert.equal(calls.length, 3, "3関数ともglobalThis.fetchが呼ばれること");
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
   describe("ページネーション対応", () => {
     it("listOpenIssuesがページネーション対応していること（Link: rel=nextを追跡）", async () => {
       const mod = await loadScript();

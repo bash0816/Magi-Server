@@ -111,7 +111,7 @@ export async function listOpenIssues(deps) {
     return openIssues;
   }
 
-  const { fetchFn, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
+  const { fetchFn = globalThis.fetch, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
   if (typeof fetchFn !== "function") {
     throw new Error("fetchFn が必要です");
   }
@@ -144,7 +144,7 @@ export async function listOpenIssues(deps) {
 }
 
 export async function createIssue(deps, body) {
-  const { fetchFn, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
+  const { fetchFn = globalThis.fetch, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
   const result = await requestJson(fetchFn, `${GITHUB_API_BASE}/repos/${encodeURIComponent(repoOwner)}/${encodeURIComponent(repoName)}/issues`, {
     method: "POST",
     headers: {
@@ -162,7 +162,7 @@ export async function createIssue(deps, body) {
 }
 
 export async function addComment(deps, issueNumber, body) {
-  const { fetchFn, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
+  const { fetchFn = globalThis.fetch, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
   const result = await requestJson(fetchFn, buildCommentUrl(repoOwner, repoName, issueNumber), {
     method: "POST",
     headers: {
@@ -180,7 +180,7 @@ export async function addComment(deps, issueNumber, body) {
 }
 
 export async function closeIssue(deps, issueNumber) {
-  const { fetchFn, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
+  const { fetchFn = globalThis.fetch, githubToken, repoOwner = DEFAULT_REPO_OWNER, repoName = DEFAULT_REPO_NAME } = deps;
   const result = await requestJson(fetchFn, buildIssueUrl(repoOwner, repoName, issueNumber), {
     method: "PATCH",
     headers: {
