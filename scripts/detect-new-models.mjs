@@ -159,7 +159,9 @@ function buildEntry(id, label, availableFrom) {
     transport: ["api"],
     available_from: availableFrom,
     deprecated_at: null,
+    deprecated_source: null,
     shutdown_at: null,
+    shutdown_source: null,
   };
 }
 

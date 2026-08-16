@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '17 0 * * *'
   workflow_dispatch:
+    inputs:
+      probe_only:
+        description: 'Run verification probe only (no model detection)'
+        required: false
+        default: 'false'
+        type: boolean
 
 concurrency:
   group: model-new-watch
@@ -32,4 +38,5 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.MODEL_WATCH_OPENAI_KEY }}
           GEMINI_API_KEY: ${{ secrets.MODEL_WATCH_GEMINI_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROBE_ONLY: ${{ inputs.probe_only }}
         run: node scripts/model-new-watch.mjs

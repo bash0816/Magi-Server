@@ -251,4 +251,85 @@ describe('model-new-watch main(deps)', () => {
       assert.equal(received.githubToken, 'github')
     }
   })
+
+  describe('PROBE_ONLY mode (verification probe)', () => {
+    test('PROBE_ONLY=true のとき、通常検知フロー（readState/readRepoModelsJson/detectNewModels）を呼ばず、writeVerificationProbe のみ呼ぶこと', async () => {
+      deps.env = { PROBE_ONLY: 'true', GITHUB_TOKEN: 'gh-token' }
+      deps.writeVerificationProbe = async (d) => { calls.push(['writeVerificationProbe', d]); return { success: true } }
+      await run()
+
+      // readState, readRepoModelsJson, detectNewModels は呼ばれないはず
+      assert.equal(calls.filter(([name]) => name === 'readState').length, 0, 'readState が呼ばれないこと')
+      assert.equal(calls.filter(([name]) => name === 'readRepoModelsJson').length, 0, 'readRepoModelsJson が呼ばれないこと')
+      assert.equal(calls.filter(([name]) => name === 'detectNewModels').length, 0, 'detectNewModels が呼ばれないこと')
+
+      // writeVerificationProbe のみ呼ばれる
+      assert.equal(calls.filter(([name]) => name === 'writeVerificationProbe').length, 1, 'writeVerificationProbe が呼ばれること')
+
+      // 他の記録関数（recordObservedIds, createModelUpdatePr, notifyNeedsReview）も呼ばれない
+      assert.equal(calls.filter(([name]) => name === 'recordObservedIds').length, 0, 'recordObservedIds が呼ばれないこと')
+      assert.equal(calls.filter(([name]) => name === 'createModelUpdatePr').length, 0, 'createModelUpdatePr が呼ばれないこと')
+      assert.equal(calls.filter(([name]) => name === 'notifyNeedsReview').length, 0, 'notifyNeedsReview が呼ばれないこと')
+
+      // 正常終了（失敗報告なし）
+      assert.equal(calls.filter(([name]) => name === 'reportModelNewWatchFailure').length, 0, '失敗報告がないこと')
+      assert.equal(calls.filter(([name]) => name === 'reportModelNewWatchSuccess').length, 1, '成功報告があること')
+    })
+
+    test('PROBE_ONLY=false のとき、通常検知フロー（readState/readRepoModelsJson/detectNewModels）を実行すること', async () => {
+      deps.env = { PROBE_ONLY: 'false', GITHUB_TOKEN: 'gh-token' }
+      deps.writeVerificationProbe = async (d) => { calls.push(['writeVerificationProbe', d]) }
+      await run()
+
+      // 通常フロー：readState → readRepoModelsJson → detectNewModels
+      assert.equal(calls.filter(([name]) => name === 'readState').length, 1, 'readState が呼ばれること')
+      assert.equal(calls.filter(([name]) => name === 'readRepoModelsJson').length, 1, 'readRepoModelsJson が呼ばれること')
+      assert.equal(calls.filter(([name]) => name === 'detectNewModels').length, 1, 'detectNewModels が呼ばれること')
+
+      // writeVerificationProbe は呼ばれない（通常フロー）
+      assert.equal(calls.filter(([name]) => name === 'writeVerificationProbe').length, 0, 'writeVerificationProbe が呼ばれないこと')
+    })
+
+    test('PROBE_ONLY が未設定のとき、通常検知フロー（readState/readRepoModelsJson/detectNewModels）を実行すること', async () => {
+      deps.env = { GITHUB_TOKEN: 'gh-token' }  // PROBE_ONLY を設定しない
+      deps.writeVerificationProbe = async (d) => { calls.push(['writeVerificationProbe', d]) }
+      await run()
+
+      // 通常フロー
+      assert.equal(calls.filter(([name]) => name === 'readState').length, 1, 'readState が呼ばれること')
+      assert.equal(calls.filter(([name]) => name === 'readRepoModelsJson').length, 1, 'readRepoModelsJson が呼ばれること')
+      assert.equal(calls.filter(([name]) => name === 'detectNewModels').length, 1, 'detectNewModels が呼ばれること')
+
+      // writeVerificationProbe は呼ばれない
+      assert.equal(calls.filter(([name]) => name === 'writeVerificationProbe').length, 0, 'writeVerificationProbe が呼ばれないこと')
+    })
+
+    test('PROBE_ONLY=true で writeVerificationProbe が失敗した場合、例外を投げること', async () => {
+      deps.env = { PROBE_ONLY: 'true', GITHUB_TOKEN: 'gh-token' }
+      deps.writeVerificationProbe = async (d) => { throw new Error('probe failed') }
+
+      try {
+        await run()
+        assert.fail('例外が投げられるはず')
+      } catch (err) {
+        assert.match(err.message, /probe failed/)
+      }
+    })
+
+    test('PROBE_ONLY=true のとき、env 内の GITHUB_TOKEN が writeVerificationProbe へ渡されること', async () => {
+      const githubToken = 'test-github-token-123'
+      deps.env = { PROBE_ONLY: 'true', GITHUB_TOKEN: githubToken }
+
+      let receivedDeps = null
+      deps.writeVerificationProbe = async (d) => {
+        receivedDeps = d
+        return { success: true }
+      }
+
+      await run()
+
+      assert.ok(receivedDeps, 'deps が受け取られたこと')
+      assert.equal(receivedDeps.githubToken, githubToken, 'GITHUB_TOKEN が渡されていること')
+    })
+  })
 })
