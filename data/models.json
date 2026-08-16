@@ -12,7 +12,9 @@
           ],
           "available_from": "2026-06-09",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "claude-opus-5",
@@ -23,7 +25,9 @@
           ],
           "available_from": "2026-07-22",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "claude-opus-4-8",
@@ -33,8 +37,10 @@
             "api"
           ],
           "available_from": "2026-05-28",
-          "deprecated_at": "2026-07-22",
-          "shutdown_at": "2026-07-28"
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "claude-sonnet-5",
@@ -45,7 +51,9 @@
           ],
           "available_from": "2026-06-30",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "claude-haiku-4-5-20251001",
@@ -56,7 +64,9 @@
           ],
           "available_from": "2025-10-01",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     },
@@ -72,7 +82,9 @@
           ],
           "available_from": "2026-07-09",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gpt-5.6-terra",
@@ -83,7 +95,9 @@
           ],
           "available_from": "2026-07-09",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gpt-5.6-luna",
@@ -94,7 +108,9 @@
           ],
           "available_from": "2026-07-09",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gpt-5.5",
@@ -105,7 +121,9 @@
           ],
           "available_from": "2026-04-23",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gpt-5.4",
@@ -116,7 +134,9 @@
           ],
           "available_from": "2026-03-05",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gpt-5.4-mini",
@@ -127,7 +147,9 @@
           ],
           "available_from": "2026-03-17",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     },
@@ -143,7 +165,9 @@
           ],
           "available_from": "2026-07-20",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3.5-flash",
@@ -154,7 +178,9 @@
           ],
           "available_from": "2026-05-19",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3.5-flash-lite",
@@ -165,7 +191,9 @@
           ],
           "available_from": "2026-05-19",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3.1-pro-preview",
@@ -176,7 +204,9 @@
           ],
           "available_from": "2026-04-01",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3.1-flash-lite",
@@ -187,7 +217,9 @@
           ],
           "available_from": "2026-04-01",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3-flash",
@@ -197,8 +229,10 @@
             "api"
           ],
           "available_from": "2026-01-01",
-          "deprecated_at": "2026-05-19",
-          "shutdown_at": "2026-07-28"
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-2.5-flash",
@@ -208,7 +242,9 @@
           ],
           "available_from": "2026-08-15",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-2.5-pro",
@@ -218,7 +254,9 @@
           ],
           "available_from": "2026-08-15",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-2.5-flash-lite",
@@ -228,7 +266,9 @@
           ],
           "available_from": "2026-08-15",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3-flash-preview",
@@ -238,7 +278,9 @@
           ],
           "available_from": "2026-08-15",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3.1-flash-lite-preview",
@@ -248,7 +290,9 @@
           ],
           "available_from": "2026-08-15",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         },
         {
           "id": "gemini-3.7-flash",
@@ -259,7 +303,9 @@
           ],
           "available_from": "2026-08-15",
           "deprecated_at": null,
-          "shutdown_at": null
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     }

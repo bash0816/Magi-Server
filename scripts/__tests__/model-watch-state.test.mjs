@@ -100,6 +100,8 @@ describe("model-watch-state (Magi-Server)", () => {
           // 1. GET で SHA 取得（404 = ファイル不在）
           if (calls.length === 1) {
             assert.equal(init.method, "GET");
+            // design.md §5: GET先URLが ref=model-watch-state になっていることを検証
+            assert.match(url, /ref=model-watch-state/, "GET先URLが ref=model-watch-state を含むこと");
             return makeResponse(404, {});
           }
 
@@ -108,7 +110,7 @@ describe("model-watch-state (Magi-Server)", () => {
             assert.equal(init.method, "PUT");
             const body = JSON.parse(init.body);
             const content = JSON.parse(decodeBase64(body.content));
-            assert.equal(body.branch, "main");
+            assert.equal(body.branch, "model-watch-state");
             assert.equal(body.sha, undefined, "404の場合、shaを指定しない");
             assert.deepEqual(content.providers.openai.observedIds, newIds);
             return makeResponse(200, { commit: { sha: "new-sha" } });
@@ -426,6 +428,492 @@ describe("model-watch-state (Magi-Server)", () => {
       // state が与えられている場合、GET（readState）を呼び出さずに PUT のみ
       assert.equal(fetchCalls.length, 1, "PUT のみ呼ばれること");
       assert.equal(fetchCalls[0].init.method, "PUT");
+    });
+  });
+
+  describe("writeVerificationProbe(deps)", () => {
+    it("一時フィールド _verificationProbe を追加・削除してSHA変化を確認することで、書き込み経路が機能していることを検証すること", async () => {
+      const mod = await loadScript();
+      const calls = [];
+      let callCount = 0;
+
+      const result = await mod.writeVerificationProbe({
+        fetchFn: async (url, init = {}) => {
+          calls.push({ url, init, callNumber: ++callCount });
+
+          // 1. 初回GET（SHA取得、ファイル存在時）
+          if (callCount === 1) {
+            assert.equal(init.method, "GET");
+            assert.match(url, /ref=model-watch-state/, "GET先URLが ref=model-watch-state を含むこと");
+            return makeResponse(200, {
+              sha: "sha-initial",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: ["gpt-4"] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+              }),
+            });
+          }
+
+          // 2. _verificationProbe 追加のPUT
+          if (callCount === 2) {
+            assert.equal(init.method, "PUT");
+            const body = JSON.parse(init.body);
+            const content = JSON.parse(decodeBase64(body.content));
+            assert.equal(body.branch, "model-watch-state");
+            assert.equal(body.sha, "sha-initial");
+            // _verificationProbe が追加されていることを確認
+            assert.ok(content._verificationProbe, "_verificationProbe フィールドが追加されたこと");
+            assert.ok(content._verificationProbe.at, "_verificationProbe.at が設定されたこと");
+            // ISO形式のタイムスタンプであることを確認
+            assert.match(content._verificationProbe.at, /^\d{4}-\d{2}-\d{2}T/);
+            // 返すSHAは最初のものと異なるべき
+            return makeResponse(200, { commit: { sha: "sha-after-add" } });
+          }
+
+          // 3. 削除PUT前の再取得GET（他プロセスによる並行更新を保持するため）
+          if (callCount === 3) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-after-add",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: ["gpt-4"] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+                _verificationProbe: { at: "2026-08-16T00:00:00.000Z" },
+              }),
+            });
+          }
+
+          // 4. _verificationProbe 削除のPUT
+          if (callCount === 4) {
+            assert.equal(init.method, "PUT");
+            const body = JSON.parse(init.body);
+            const content = JSON.parse(decodeBase64(body.content));
+            assert.equal(body.sha, "sha-after-add");
+            // _verificationProbe が削除されていることを確認
+            assert.equal(content._verificationProbe, undefined, "_verificationProbe フィールドが削除されたこと");
+            // 返すSHAは追加後のものと異なるべき
+            return makeResponse(200, { commit: { sha: "sha-after-delete" } });
+          }
+
+          throw new Error(`unexpected call #${callCount}: ${url}`);
+        },
+        env: { GITHUB_TOKEN: "gh-token" },
+      });
+
+      assert.equal(calls.length, 4);
+      assert.equal(result.success, true);
+    });
+
+    it("404の場合（初回作成）でも、_verificationProbe の追加・削除を検証すること", async () => {
+      const mod = await loadScript();
+      const calls = [];
+      let callCount = 0;
+
+      const result = await mod.writeVerificationProbe({
+        fetchFn: async (url, init = {}) => {
+          calls.push({ url, init });
+          callCount++;
+
+          // 1. 初回GET（ファイル不在）
+          if (callCount === 1) {
+            assert.equal(init.method, "GET");
+            return makeResponse(404, {});
+          }
+
+          // 2. _verificationProbe 追加のPUT（404後は sha なし）
+          if (callCount === 2) {
+            assert.equal(init.method, "PUT");
+            const body = JSON.parse(init.body);
+            assert.equal(body.sha, undefined, "404後は sha を指定しない");
+            const content = JSON.parse(decodeBase64(body.content));
+            assert.ok(content._verificationProbe);
+            return makeResponse(201, { commit: { sha: "sha-created-with-probe" } });
+          }
+
+          // 3. 削除PUT前の再取得GET
+          if (callCount === 3) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-created-with-probe",
+              content: toBase64Json({
+                _verificationProbe: { at: "2026-08-16T00:00:00.000Z" },
+              }),
+            });
+          }
+
+          // 4. _verificationProbe 削除のPUT
+          if (callCount === 4) {
+            assert.equal(init.method, "PUT");
+            const body = JSON.parse(init.body);
+            const content = JSON.parse(decodeBase64(body.content));
+            assert.equal(content._verificationProbe, undefined);
+            return makeResponse(200, { commit: { sha: "sha-probe-deleted" } });
+          }
+
+          throw new Error(`unexpected call #${callCount}`);
+        },
+        env: { GITHUB_TOKEN: "gh-token" },
+      });
+
+      assert.equal(calls.length, 4);
+      assert.equal(result.success, true);
+    });
+
+    it("PUT後のSHA変化が確認できない場合、例外を投げること", async () => {
+      const mod = await loadScript();
+      let callCount = 0;
+      let thrown = false;
+
+      try {
+        await mod.writeVerificationProbe({
+          fetchFn: async (url, init = {}) => {
+            callCount++;
+
+            if (callCount === 1) {
+              // 初回GET
+              return makeResponse(200, {
+                sha: "sha-initial",
+                content: toBase64Json({
+                  version: 1,
+                  providers: {
+                    openai: { observedIds: [] },
+                    gemini: { needsReviewNotified: [] },
+                    claude: { needsReviewNotified: [] },
+                  },
+                }),
+              });
+            }
+
+            if (callCount === 2) {
+              // _verificationProbe 追加のPUT、しかし同じSHAを返す（変化なし）
+              return makeResponse(200, { commit: { sha: "sha-initial" } });
+            }
+
+            throw new Error(`unexpected call #${callCount}`);
+          },
+          env: { GITHUB_TOKEN: "gh-token" },
+        });
+      } catch (err) {
+        thrown = true;
+        assert.match(err.message, /SHA|change|変化|probe/i, "SHA変化に関するエラーメッセージ");
+      }
+
+      assert.equal(thrown, true, "SHA変化なしで例外が投げられること");
+    });
+
+    it("削除PUT後のSHA変化が確認できない場合、例外を投げること", async () => {
+      const mod = await loadScript();
+      let callCount = 0;
+      let thrown = false;
+
+      try {
+        await mod.writeVerificationProbe({
+          fetchFn: async (url, init = {}) => {
+            callCount++;
+
+            if (callCount === 1) {
+              return makeResponse(200, {
+                sha: "sha-v1",
+                content: toBase64Json({
+                  version: 1,
+                  providers: {
+                    openai: { observedIds: [] },
+                    gemini: { needsReviewNotified: [] },
+                    claude: { needsReviewNotified: [] },
+                  },
+                }),
+              });
+            }
+
+            if (callCount === 2) {
+              // 追加PUT成功
+              return makeResponse(200, { commit: { sha: "sha-v2" } });
+            }
+
+            if (callCount === 3) {
+              // 削除PUT前の再取得GET
+              return makeResponse(200, {
+                sha: "sha-v2",
+                content: toBase64Json({
+                  version: 1,
+                  providers: {
+                    openai: { observedIds: [] },
+                    gemini: { needsReviewNotified: [] },
+                    claude: { needsReviewNotified: [] },
+                  },
+                  _verificationProbe: { at: "2026-08-16T00:00:00.000Z" },
+                }),
+              });
+            }
+
+            if (callCount === 4) {
+              // 削除PUTしたのにSHAが変わらない
+              return makeResponse(200, { commit: { sha: "sha-v2" } });
+            }
+
+            throw new Error(`unexpected call #${callCount}`);
+          },
+          env: { GITHUB_TOKEN: "gh-token" },
+        });
+      } catch (err) {
+        thrown = true;
+        assert.match(err.message, /delete|SHA|change/i, "削除またはSHA変化に関するエラーメッセージ");
+      }
+
+      assert.equal(thrown, true, "削除PUT後のSHA変化なしで例外が投げられること");
+    });
+
+    it("追加PUT時に409/422競合を受けても、最新状態を再取得して再試行し、最終的に成功すること", async () => {
+      const mod = await loadScript();
+      let callCount = 0;
+
+      const result = await mod.writeVerificationProbe({
+        fetchFn: async (url, init = {}) => {
+          callCount++;
+
+          // 1. 初回GET
+          if (callCount === 1) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-v1",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: ["gpt-4"] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+              }),
+            });
+          }
+
+          // 2. 追加PUT（初回試行）→ 409競合
+          if (callCount === 2) {
+            assert.equal(init.method, "PUT");
+            return makeResponse(409, { message: "Conflict" });
+          }
+
+          // 3. 競合後の再取得GET
+          if (callCount === 3) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-v1-updated",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: ["gpt-4", "gpt-4-turbo"] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+              }),
+            });
+          }
+
+          // 4. 追加PUT（リトライ）→ 成功
+          if (callCount === 4) {
+            assert.equal(init.method, "PUT");
+            const body = JSON.parse(init.body);
+            assert.equal(body.sha, "sha-v1-updated", "再取得したSHAを使用");
+            return makeResponse(200, { commit: { sha: "sha-with-probe-v2" } });
+          }
+
+          // 5. 削除PUT前の再取得GET
+          if (callCount === 5) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-with-probe-v2",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: ["gpt-4", "gpt-4-turbo"] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+                _verificationProbe: { at: "2026-08-16T00:00:00.000Z" },
+              }),
+            });
+          }
+
+          // 6. 削除PUT
+          if (callCount === 6) {
+            assert.equal(init.method, "PUT");
+            return makeResponse(200, { commit: { sha: "sha-without-probe-v2" } });
+          }
+
+          throw new Error(`unexpected call #${callCount}`);
+        },
+        env: { GITHUB_TOKEN: "gh-token" },
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(callCount, 6, "GET 4回（初回+競合後再取得+削除前再取得）、PUT 2回が発生すること");
+    });
+
+    it("削除PUT時に409/422競合を受けても、最新状態を再取得して再試行し、最終的に成功すること", async () => {
+      const mod = await loadScript();
+      let callCount = 0;
+
+      const result = await mod.writeVerificationProbe({
+        fetchFn: async (url, init = {}) => {
+          callCount++;
+
+          // 1. 初回GET
+          if (callCount === 1) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-initial",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: [] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+              }),
+            });
+          }
+
+          // 2. 追加PUT → 成功
+          if (callCount === 2) {
+            assert.equal(init.method, "PUT");
+            return makeResponse(200, { commit: { sha: "sha-with-probe" } });
+          }
+
+          // 3. 削除PUT前の再取得GET
+          if (callCount === 3) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-with-probe",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: [] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+                _verificationProbe: { at: "2026-08-16T00:00:00.000Z" },
+              }),
+            });
+          }
+
+          // 4. 削除PUT（初回試行）→ 422競合
+          if (callCount === 4) {
+            assert.equal(init.method, "PUT");
+            return makeResponse(422, { message: "Validation failed" });
+          }
+
+          // 5. 競合後の再取得GET
+          if (callCount === 5) {
+            assert.equal(init.method, "GET");
+            return makeResponse(200, {
+              sha: "sha-with-probe-updated",
+              content: toBase64Json({
+                version: 1,
+                providers: {
+                  openai: { observedIds: ["gpt-4"] },
+                  gemini: { needsReviewNotified: [] },
+                  claude: { needsReviewNotified: [] },
+                },
+                _verificationProbe: { at: "2026-08-16T00:00:00.000Z" },
+              }),
+            });
+          }
+
+          // 6. 削除PUT（リトライ）→ 成功
+          if (callCount === 6) {
+            assert.equal(init.method, "PUT");
+            const body = JSON.parse(init.body);
+            assert.equal(body.sha, "sha-with-probe-updated");
+            const content = JSON.parse(decodeBase64(body.content));
+            // STEP8コーディングレビュー2回目Blocker対応: リトライPUTのコンテンツに
+            // _verificationProbe が再度混入していないこと（競合後の再取得GETに
+            // probeが残ったまま除去し忘れると混入する回帰バグの検出用）
+            assert.equal(content._verificationProbe, undefined, "リトライPUTのコンテンツに_verificationProbeが含まれないこと");
+            // 並行更新で追加されたフィールド（observedIds: ["gpt-4"]）が保持されていること
+            assert.deepEqual(content.providers.openai.observedIds, ["gpt-4"], "並行更新フィールドが保持されること");
+            return makeResponse(200, { commit: { sha: "sha-without-probe-final" } });
+          }
+
+          throw new Error(`unexpected call #${callCount}`);
+        },
+        env: { GITHUB_TOKEN: "gh-token" },
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(callCount, 6, "GET 3回、PUT 3回が発生すること");
+    });
+
+    it("追加PUT時に3回再試行しても409/422が続く場合、例外を投げること", async () => {
+      const mod = await loadScript();
+      let callCount = 0;
+      let thrown = false;
+
+      try {
+        await mod.writeVerificationProbe({
+          fetchFn: async (url, init = {}) => {
+            callCount++;
+
+            // 1. 初回GET
+            if (callCount === 1) {
+              return makeResponse(200, {
+                sha: "sha-v1",
+                content: toBase64Json({
+                  version: 1,
+                  providers: {
+                    openai: { observedIds: [] },
+                    gemini: { needsReviewNotified: [] },
+                    claude: { needsReviewNotified: [] },
+                  },
+                }),
+              });
+            }
+
+            // 2-7: 追加PUT試行1回目 + 再取得GET + リトライ 3回 = 4回の試行 + 3回の再取得GET
+            // callCount 2: 追加PUT初回試行 → 409
+            // callCount 3: 再取得GET
+            // callCount 4: 追加PUT リトライ1 → 409
+            // callCount 5: 再取得GET
+            // callCount 6: 追加PUT リトライ2 → 409
+            // callCount 7: 再取得GET
+            // callCount 8: 追加PUT リトライ3 → 409 （これが最後の試行）
+
+            if (callCount % 2 === 0) {
+              // PUT: 常に409を返す
+              return makeResponse(409, { message: "Conflict" });
+            } else if (callCount >= 3) {
+              // GET: 常に新しいshaを返す
+              const newSha = `sha-v1-${(callCount - 3) / 2 + 1}`;
+              return makeResponse(200, {
+                sha: newSha,
+                content: toBase64Json({
+                  version: 1,
+                  providers: {
+                    openai: { observedIds: [] },
+                    gemini: { needsReviewNotified: [] },
+                    claude: { needsReviewNotified: [] },
+                  },
+                }),
+              });
+            }
+
+            throw new Error(`unexpected call #${callCount}`);
+          },
+          env: { GITHUB_TOKEN: "gh-token" },
+        });
+      } catch (err) {
+        thrown = true;
+        assert.match(err.message, /再試行|競合|失敗/i);
+      }
+
+      assert.equal(thrown, true, "3回再試行後も409が続く場合、例外を投げること");
     });
   });
 });

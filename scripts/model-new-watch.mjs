@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createModelUpdatePr as defaultCreateModelUpdatePr } from "./create-model-update-pr.mjs";
 import { detectNewModels as defaultDetectNewModels, readRepoModelsJson as defaultReadRepoModelsJson } from "./detect-new-models.mjs";
 import { notifyNeedsReview as defaultNotifyNeedsReview } from "./model-watch-needs-review.mjs";
-import { readState as defaultReadState, recordObservedIds as defaultRecordObservedIds } from "./model-watch-state.mjs";
+import { readState as defaultReadState, recordObservedIds as defaultRecordObservedIds, writeVerificationProbe as defaultWriteVerificationProbe } from "./model-watch-state.mjs";
 import { reportModelNewWatchFailure as defaultReportFailure, reportModelNewWatchSuccess as defaultReportSuccess } from "./model-new-watch-health-check.mjs";
 
 function buildDetectedInput(results, models) {
@@ -25,6 +25,23 @@ function buildDetectedInput(results, models) {
 
 export async function main(inputDeps = {}) {
   let deps = inputDeps, state, currentModelsJson, results;
+  const env = deps.env ?? process.env;
+  deps = { ...deps, env, openaiApiKey: deps.openaiApiKey ?? env.OPENAI_API_KEY, geminiApiKey: deps.geminiApiKey ?? env.GEMINI_API_KEY, githubToken: deps.githubToken ?? env.GITHUB_TOKEN };
+
+  // PROBE_ONLY モード: 検証プローブのみを実行
+  if (env.PROBE_ONLY === "true") {
+    const writeVerificationProbe = deps.writeVerificationProbe ?? defaultWriteVerificationProbe;
+    const reportSuccess = deps.reportModelNewWatchSuccess ?? defaultReportSuccess;
+    try {
+      await writeVerificationProbe(deps);
+      await reportSuccess(deps);
+      return;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 通常のモデル検知フロー
   const readState = deps.readState ?? defaultReadState;
   const readRepoModelsJson = deps.readRepoModelsJson ?? defaultReadRepoModelsJson;
   const detectNewModels = deps.detectNewModels ?? defaultDetectNewModels;
@@ -34,8 +51,6 @@ export async function main(inputDeps = {}) {
   const reportFailure = deps.reportModelNewWatchFailure ?? defaultReportFailure;
   const reportSuccess = deps.reportModelNewWatchSuccess ?? defaultReportSuccess;
   try {
-    const env = deps.env ?? process.env;
-    deps = { ...deps, env, openaiApiKey: deps.openaiApiKey ?? env.OPENAI_API_KEY, geminiApiKey: deps.geminiApiKey ?? env.GEMINI_API_KEY, githubToken: deps.githubToken ?? env.GITHUB_TOKEN };
     state = await readState(deps);
     currentModelsJson = await readRepoModelsJson(deps);
     results = await detectNewModels({ ...deps, state, currentModelsJson });

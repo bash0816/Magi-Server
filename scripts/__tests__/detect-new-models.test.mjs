@@ -585,3 +585,69 @@ test("readRepoModelsJson export 確認: data/models.json を正しく読み込�
   // ここではテスト対象がまだ実装前なので、mock を用いた検証は STEP 5 以降に実施
   assert(true, "readRepoModelsJson export は STEP 5 実装時に確認");
 });
+
+test("buildEntry() が生成するエントリに deprecated_source: null と shutdown_source: null が含まれることを検証 (design.md §3.3)", async () => {
+  // 注: buildEntry は detect-new-models.mjs の内部関数のため、
+  // 直接呼び出しが難しい場合は collectNewEntriesForProvider()の
+  // 実行結果を通じて検証する方法もある。
+  // ここでは、detectNewModels() の実行結果からエントリの構造を確認する
+
+  const currentModelsJson = buildCurrentModelsJson();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const results = await detectNewModels({
+    fetchFn: createFetchStub(
+      [
+        makeResponse(200, "<html>claude-new</html>"), // Claude スクレイピング
+        makeResponse(200, {
+          data: [{ id: "gpt-new", display_name: "GPT New" }],
+        }),
+        makeResponse(200, {
+          models: [
+            {
+              name: "models/gemini-1.5-flash",
+              displayName: "Gemini Flash",
+              supportedGenerationMethods: ["generateContent"],
+            },
+          ],
+        }),
+      ],
+      [],
+    ),
+    currentModelsJson: JSON.stringify(currentModelsJson),
+    state: { providers: { openai: { observedIds: [] } } },
+    openaiApiKey: "openai-key",
+    geminiApiKey: "gemini-key",
+  });
+
+  // autoAdd に含まれるエントリが新規モデルエントリ（buildEntry()で生成されたもの）
+  // 構造を検証
+  const openaiResult = results.find(r => r.provider === "openai");
+  assert.ok(openaiResult.status === "success", "OpenAI リクエスト成功");
+
+  // autoAdd に新規エントリが含まれているはず
+  const autoAddEntries = openaiResult.candidates.autoAdd;
+  assert.ok(autoAddEntries.length > 0, "新規エントリが検知されていること");
+
+  // 各エントリが deprecated_source と shutdown_source を含むことを確認
+  for (const entry of autoAddEntries) {
+    assert.ok(
+      "deprecated_source" in entry,
+      `エントリ ${entry.id} に deprecated_source フィールドが存在すること`
+    );
+    assert.ok(
+      "shutdown_source" in entry,
+      `エントリ ${entry.id} に shutdown_source フィールドが存在すること`
+    );
+    assert.strictEqual(
+      entry.deprecated_source,
+      null,
+      `エントリ ${entry.id} の deprecated_source が null であること`
+    );
+    assert.strictEqual(
+      entry.shutdown_source,
+      null,
+      `エントリ ${entry.id} の shutdown_source が null であること`
+    );
+  }
+});
