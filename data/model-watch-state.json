@@ -111,7 +111,8 @@
         "gemini-3.7-flash-video-understanding-eap",
         "gemini-3.1-pro-preview-customtools",
         "gemini-omni-flash-preview",
-        "gemini-3.5-transcribe"
+        "gemini-3.5-transcribe",
+        "gemini-omni-1.1-flash"
       ]
     },
     "claude": {
