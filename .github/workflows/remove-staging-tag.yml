@@ -1,0 +1,36 @@
+name: Remove staging dist-tag (one-off)
+
+# 2026-08-30 (npm publishフロー見直し): @staging中間タグ廃止に伴うワンオフの後始末。
+# @stagingは0.36.0を指したまま凍結されており、terra指摘の通り「タグから参照されない」
+# 状態にするには明示的な削除が必要。実行完了後、このワークフローファイル自体を別PRで削除する。
+# 詳細: magi-system側 .codex-review/npm_publish_flow_redesign_design.md
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: npm-publish-magi-server
+  cancel-in-progress: false
+
+jobs:
+  remove-tag:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Remove @staging dist-tag
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -eu
+          CURRENT=$(npm view "@bash0816/magi-server" dist-tags.staging 2>/dev/null || true)
+          if [ -z "$CURRENT" ]; then
+            echo "@staging tag already absent, nothing to do"
+            exit 0
+          fi
+          npm dist-tag rm @bash0816/magi-server staging
+          echo "Removed @staging tag (was pointing to ${CURRENT})"
