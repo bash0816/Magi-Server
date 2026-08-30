@@ -68,8 +68,13 @@ export function verifyCandidateVersion({ version, currentCandidate }) {
       errors.push(`Invalid semver for current @candidate tag: ${currentCandidate}`);
       return { ok: false, errors };
     }
-    if (compareSemver(version, currentCandidate) === "lt") {
+    const cmp = compareSemver(version, currentCandidate);
+    if (cmp === "lt") {
       errors.push(`Would downgrade @candidate from ${currentCandidate} to ${version}`);
+    } else if (cmp === "eq") {
+      // STEP8レビュー指摘: npm publishは同一バージョンを再publishできず失敗する。
+      // 「冪等に許可」は実運用と不整合なため明示的に拒否し、PATCHバンプを促す。
+      errors.push(`Version ${version} is already published as @candidate. Bump the version (PATCH or higher) before publishing again.`);
     }
   }
   return { ok: errors.length === 0, errors };

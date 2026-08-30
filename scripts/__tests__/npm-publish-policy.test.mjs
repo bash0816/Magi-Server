@@ -106,9 +106,10 @@ describe("verifyCandidateVersion", () => {
     assert.equal(result.ok, true);
   });
 
-  it("既存candidateと同一バージョンは許可する(冪等)", () => {
+  it("既存candidateと同一バージョンは拒否する(npm publishは同一versionを再publishできないため、STEP8指摘)", () => {
     const result = verifyCandidateVersion({ version: "0.36.1", currentCandidate: "0.36.1" });
-    assert.equal(result.ok, true);
+    assert.equal(result.ok, false);
+    assert.match(result.errors.join("\n"), /already published as @candidate/);
   });
 
   it("既存candidateより古いバージョンは拒否する(ダウングレード防止)", () => {
