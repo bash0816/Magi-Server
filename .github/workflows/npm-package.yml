@@ -26,7 +26,24 @@ jobs:
     # (未検知のまま2週間以上放置)。ユーザー判断により、承認不要より既存シークレットの再利用を
     # 優先し環境参照を復活。以後@staging publishもbash0816さんの手動承認(Deployment approval)が
     # 必要になる。
+    #
+    # 2026-08-30 (npm publishフロー見直し): @staging中間タグを廃止し、mainブランチから
+    # 直接@candidateへpublishする2段階フロー(@candidate→@latest)へ変更。@stagingは
+    # Web/Server側のrevisionベース運用(頻繁に更新される)とnpm publish(publish後は凍結)の
+    # 構造的ミスマッチが原因で、0.36.0が@stagingへpublishされたまま@candidateへの昇格が
+    # 一度も試みられず放置される事故を招いた。判定ロジックはscripts/npm-publish-policy.mjs
+    # へ抽出しユニットテスト済み(scripts/__tests__/npm-publish-policy.test.mjs)。
+    # なお Magi-System の main は GitHub側のブランチ保護機能が有料プラン限定のため
+    # 未設定(ローカルpre-push hookでの直接push抑止のみ)。詳細:
+    # magi-system側 .codex-review/npm_publish_flow_redesign_design.md
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
       - name: Validate inputs
         env:
           RUN_ID: ${{ inputs.build_run_id }}
@@ -37,7 +54,8 @@ jobs:
 
       - name: Verify build run authenticity
         # dispatch元(publish-magi-server.yml)はこのstep自体をまだ実行中の場合があるため
-        # status=completedになるまでbounded retryでポーリングする。
+        # status=completedになるまでbounded retryでポーリングする。判定ロジック自体は
+        # scripts/npm-publish-policy-cli.mjs(verify-run)へ委譲する。
         env:
           GH_TOKEN: ${{ secrets.MAGI_SYSTEM_READONLY_PAT }}
           RUN_ID: ${{ inputs.build_run_id }}
@@ -59,12 +77,14 @@ jobs:
           EVENT=$(echo "$RUN_JSON" | jq -r '.event')
           CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion')
           BRANCH=$(echo "$RUN_JSON" | jq -r '.head_branch')
-          [ "$NAME" = "Publish Magi Server" ] || { echo "::error::Unexpected workflow name: $NAME"; exit 1; }
-          [ "$PATH_" = ".github/workflows/publish-magi-server.yml" ] || { echo "::error::Unexpected workflow path: $PATH_"; exit 1; }
-          [ "$EVENT" = "workflow_dispatch" ] || { echo "::error::Unexpected event: $EVENT"; exit 1; }
-          [ "$CONCLUSION" = "success" ] || { echo "::error::Run did not succeed: $CONCLUSION"; exit 1; }
-          [ "$BRANCH" = "staging" ] || { echo "::error::Unexpected branch: $BRANCH"; exit 1; }
-          echo "Run authenticity verified: $NAME #$RUN_ID (branch=$BRANCH, conclusion=$CONCLUSION)"
+          HEAD_SHA=$(echo "$RUN_JSON" | jq -r '.head_sha')
+          MAIN_SHA=$(gh api repos/bash0816/Magi-System/commits/main --jq '.sha')
+
+          node scripts/npm-publish-policy-cli.mjs verify-run \
+            --workflow-name="$NAME" --workflow-path="$PATH_" --event="$EVENT" \
+            --conclusion="$CONCLUSION" --branch="$BRANCH" \
+            --head-sha="$HEAD_SHA" --main-sha="$MAIN_SHA"
+          echo "Run authenticity verified: $NAME #$RUN_ID (branch=$BRANCH, head_sha=$HEAD_SHA, conclusion=$CONCLUSION)"
 
       - name: Download tarball from Magi-System internal release
         env:
@@ -89,17 +109,35 @@ jobs:
           [ "$ACTUAL" = "$EXPECTED" ] || { echo "::error::sha256 mismatch (expected=$EXPECTED actual=$ACTUAL)"; exit 1; }
           echo "integrity OK: $ACTUAL"
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
-        with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
+      - name: Verify candidate version is not a downgrade
+        # 2026-08-30追加(条件2): @staging廃止に伴い、旧promote-staging-to-candidate.ymlに
+        # あったcandidateダウングレード防止チェックをここへ移植。判定ロジックは
+        # scripts/npm-publish-policy-cli.mjs(verify-candidate-version)へ委譲する。
+        id: version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -eu
+          TGZ_FILES=(/tmp/magi-publish/bash0816-magi-server-*.tgz)
+          VERSION=$(tar -xzO -f "${TGZ_FILES[0]}" package/package.json | node -e "
+            let d = '';
+            process.stdin.on('data', c => d += c);
+            process.stdin.on('end', () => console.log(JSON.parse(d).version));
+          ")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Publish to npm as @staging
+          CURRENT_CANDIDATE=$(npm view "@bash0816/magi-server" dist-tags.candidate 2>/dev/null || true)
+          node scripts/npm-publish-policy-cli.mjs verify-candidate-version \
+            --version="$VERSION" --current-candidate="${CURRENT_CANDIDATE:-}"
+
+      - name: Publish to npm as @candidate
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           TGZ_FILES=(/tmp/magi-publish/bash0816-magi-server-*.tgz)
-          npm publish "${TGZ_FILES[0]}" --ignore-scripts --access public --tag staging
+          # 2026-08-30変更(条件1): @staging → @candidate へpublish先を変更
+          npm publish "${TGZ_FILES[0]}" --ignore-scripts --access public --tag candidate
+          echo "Published @bash0816/magi-server@${{ steps.version.outputs.version }} to @candidate"
 
       - name: Cleanup
         if: always()
