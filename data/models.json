@@ -4,6 +4,19 @@
       "label": "Claude (Anthropic)",
       "models": [
         {
+          "id": "claude-fable-5-1",
+          "label": "Claude Fable 5.1",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-01",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
           "id": "claude-fable-5",
           "label": "Claude Fable 5",
           "transport": [
