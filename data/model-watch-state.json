@@ -151,7 +151,8 @@
         "claude-sonnet-3-5",
         "claude-haiku-3-5",
         "claude-opus-3",
-        "claude-haiku-3"
+        "claude-haiku-3",
+        "claude-mythos-5-1"
       ]
     }
   },
