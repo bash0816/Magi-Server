@@ -319,6 +319,19 @@
           "deprecated_source": null,
           "shutdown_at": null,
           "shutdown_source": null
+        },
+        {
+          "id": "gemini-3.8-flash",
+          "label": "Gemini 3.8 Flash",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-02",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     }
