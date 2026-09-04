@@ -154,7 +154,8 @@
         "claude-haiku-3-5",
         "claude-opus-3",
         "claude-haiku-3",
-        "claude-mythos-5-1"
+        "claude-mythos-5-1",
+        "claude-lock.json"
       ]
     }
   },
