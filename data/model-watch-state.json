@@ -103,7 +103,8 @@
         "gpt-realtime-2.1",
         "gpt-realtime-2.1-mini",
         "gpt-transcribe",
-        "gpt-live-transcribe"
+        "gpt-live-transcribe",
+        "gpt-6-astra"
       ]
     },
     "gemini": {
