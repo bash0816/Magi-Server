@@ -168,7 +168,8 @@
           "id": "gpt-6-astra",
           "label": "GPT-6 Astra",
           "transport": [
-            "api"
+            "api",
+            "cli"
           ],
           "available_from": "2026-09-04",
           "deprecated_at": null,
