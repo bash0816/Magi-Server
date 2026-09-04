@@ -163,6 +163,19 @@
           "deprecated_source": null,
           "shutdown_at": null,
           "shutdown_source": null
+        },
+        {
+          "id": "gpt-6-astra",
+          "label": "GPT-6 Astra",
+          "transport": [
+            "api",
+            "cli"
+          ],
+          "available_from": "2026-09-04",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     },
