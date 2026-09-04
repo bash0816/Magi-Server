@@ -166,7 +166,7 @@
         },
         {
           "id": "gpt-6-astra",
-          "label": "gpt-6-astra",
+          "label": "GPT-6 Astra",
           "transport": [
             "api"
           ],
