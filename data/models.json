@@ -176,6 +176,18 @@
           "deprecated_source": null,
           "shutdown_at": null,
           "shutdown_source": null
+        },
+        {
+          "id": "gpt-live-1",
+          "label": "gpt-live-1",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-09-11",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     },
