@@ -6,6 +6,7 @@ const ALLOWED_SOURCE_DOMAINS = {
   openai: ["platform.openai.com", "openai.com", "help.openai.com"],
   gemini: ["ai.google.dev", "developers.google.com", "blog.google"],
   claude: ["platform.claude.com", "anthropic.com", "docs.anthropic.com"],
+  copilot: ["github.blog", "docs.github.com", "github.com"],
 };
 
 function isValidSourceUrl(url, provider) {
