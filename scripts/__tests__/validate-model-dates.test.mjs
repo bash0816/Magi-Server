@@ -94,3 +94,40 @@ test("2026-09-03のGitHub公式Copilotモデル廃止告知(4件)が漏れなく
 
   assert.deepEqual(violations, [], violations.join("\n"));
 });
+
+test("2026-08-31のGitHub公式Copilotモデル廃止告知(2026-09-01廃止・4件)が漏れなく正しく反映されていること", () => {
+  const data = JSON.parse(readFileSync(new URL("../../data/models.json", import.meta.url), "utf8"));
+  const SOURCE_URL = "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/";
+  const EXPECTED_DEPRECATED_AT = "2026-09-01";
+  const EXPECTED_SHUTDOWN_AT = "2026-09-01";
+  // claude-sonnet-4.6は個人年払いプランのみ例外的に利用可能で現スキーマでは表現できないため、
+  // カタログから除外済み（このテストの対象外）
+  const ANNOUNCED_DEPRECATIONS = ["claude-opus-4.5", "claude-opus-4.6", "claude-sonnet-4.5", "gemini-3.1-pro-preview"];
+
+  const copilotModels = data.providers.copilot.models;
+  const byId = new Map(copilotModels.map((m) => [m.id, m]));
+  const violations = [];
+
+  if (byId.has("claude-sonnet-4.6")) {
+    violations.push("claude-sonnet-4.6: 個人年払いプランのみの例外モデルのため、カタログから除外されているべきです（現スキーマはプラン別可用性を表現できない）");
+  }
+
+  for (const id of ANNOUNCED_DEPRECATIONS) {
+    const model = byId.get(id);
+    if (!model) {
+      violations.push(`${id}: copilotプロバイダーにエントリ自体が存在しません`);
+      continue;
+    }
+    if (model.deprecated_at !== EXPECTED_DEPRECATED_AT) {
+      violations.push(`${id}: deprecated_atが${JSON.stringify(model.deprecated_at)}（期待値: ${EXPECTED_DEPRECATED_AT}）`);
+    }
+    if (model.shutdown_at !== EXPECTED_SHUTDOWN_AT) {
+      violations.push(`${id}: shutdown_atが${JSON.stringify(model.shutdown_at)}（期待値: ${EXPECTED_SHUTDOWN_AT}）`);
+    }
+    if (model.deprecated_source !== SOURCE_URL || model.shutdown_source !== SOURCE_URL) {
+      violations.push(`${id}: deprecated_source/shutdown_sourceが告知URLと一致しません`);
+    }
+  }
+
+  assert.deepEqual(violations, [], violations.join("\n"));
+});

@@ -562,10 +562,10 @@
             "cli"
           ],
           "available_from": "2026-08-31",
-          "deprecated_at": null,
-          "shutdown_at": null,
-          "deprecated_source": null,
-          "shutdown_source": null
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
         },
         {
           "id": "gemini-3.5-flash",
