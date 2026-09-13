@@ -442,7 +442,7 @@
             "cli"
           ],
           "available_from": "2026-08-31",
-          "deprecated_at": "2026-09-03",
+          "deprecated_at": "2026-10-02",
           "shutdown_at": "2026-10-02",
           "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
           "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"
@@ -586,9 +586,21 @@
             "cli"
           ],
           "available_from": "2026-08-31",
-          "deprecated_at": "2026-09-03",
+          "deprecated_at": "2026-10-02",
           "shutdown_at": "2026-10-02",
           "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
+          "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"
+        },
+        {
+          "id": "gemini-3.6-flash",
+          "label": "Gemini 3.6 Flash",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-10-02",
+          "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
+          "shutdown_at": "2026-10-02",
           "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"
         },
         {
@@ -598,7 +610,7 @@
             "cli"
           ],
           "available_from": "2026-08-31",
-          "deprecated_at": "2026-09-03",
+          "deprecated_at": "2026-10-02",
           "shutdown_at": "2026-10-02",
           "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
           "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"

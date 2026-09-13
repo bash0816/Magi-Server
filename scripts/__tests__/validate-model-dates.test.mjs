@@ -6,7 +6,7 @@ const ALLOWED_SOURCE_DOMAINS = {
   openai: ["platform.openai.com", "openai.com", "help.openai.com"],
   gemini: ["ai.google.dev", "developers.google.com", "blog.google"],
   claude: ["platform.claude.com", "anthropic.com", "docs.anthropic.com"],
-  copilot: ["github.blog", "docs.github.com", "github.com"],
+  copilot: ["github.blog", "docs.github.com"],
 };
 
 function isValidSourceUrl(url, provider) {
@@ -58,6 +58,37 @@ test("全モデルエントリにdeprecated_at/deprecated_source/shutdown_at/shu
           );
         }
       }
+    }
+  }
+
+  assert.deepEqual(violations, [], violations.join("\n"));
+});
+
+test("2026-09-03のGitHub公式Copilotモデル廃止告知(4件)が漏れなく正しく反映されていること", () => {
+  const data = JSON.parse(readFileSync(new URL("../../data/models.json", import.meta.url), "utf8"));
+  const SOURCE_URL = "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/";
+  const EXPECTED_DEPRECATED_AT = "2026-10-02";
+  const EXPECTED_SHUTDOWN_AT = "2026-10-02";
+  const ANNOUNCED_DEPRECATIONS = ["gemini-3.5-flash", "gemini-3.6-flash", "kimi-k2.7-code", "claude-opus-4.7"];
+
+  const copilotModels = data.providers.copilot.models;
+  const byId = new Map(copilotModels.map((m) => [m.id, m]));
+  const violations = [];
+
+  for (const id of ANNOUNCED_DEPRECATIONS) {
+    const model = byId.get(id);
+    if (!model) {
+      violations.push(`${id}: copilotプロバイダーにエントリ自体が存在しません`);
+      continue;
+    }
+    if (model.deprecated_at !== EXPECTED_DEPRECATED_AT) {
+      violations.push(`${id}: deprecated_atが${JSON.stringify(model.deprecated_at)}（期待値: ${EXPECTED_DEPRECATED_AT}。告知日ではなく実際の廃止日と一致させること）`);
+    }
+    if (model.shutdown_at !== EXPECTED_SHUTDOWN_AT) {
+      violations.push(`${id}: shutdown_atが${JSON.stringify(model.shutdown_at)}（期待値: ${EXPECTED_SHUTDOWN_AT}）`);
+    }
+    if (model.deprecated_source !== SOURCE_URL || model.shutdown_source !== SOURCE_URL) {
+      violations.push(`${id}: deprecated_source/shutdown_sourceが告知URLと一致しません`);
     }
   }
 
