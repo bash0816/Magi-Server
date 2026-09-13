@@ -101,9 +101,10 @@ test("2026-08-31のGitHub公式Copilotモデル廃止告知(2026-09-01廃止・4
   const EXPECTED_DEPRECATED_AT = "2026-09-01";
   const EXPECTED_SHUTDOWN_AT = "2026-09-01";
   // 8/31告知には他に claude-sonnet-4.6（個人年払いプランのみ例外的に利用可能で現スキーマでは
-  // 表現できないため除外済み、下でnon-existenceを検証）と Raptor Mini（GitHub公式によれば
-  // Copilot Chat/Ask/Edit/Agent専用でCopilot CLIには公開されておらず、そもそも本カタログの
-  // 対象外。参照: https://github.com/orgs/community/discussions/186154）も含まれるが、
+  // 表現できないため除外済み、下でnon-existenceを検証）と Raptor Mini（GitHub Communityの
+  // 回答によればCopilot CLIには公開されていないとのこと、そもそも本カタログの対象外。
+  // 参照: https://github.com/orgs/community/discussions/186154 ※公式ドキュメントではなく
+  // コミュニティ上のユーザー回答のため参考情報。下でnon-existenceを検証）も含まれるが、
   // いずれもこのCLIモデルカタログには該当しないため対象外とする
   const ANNOUNCED_DEPRECATIONS = ["claude-opus-4.5", "claude-opus-4.6", "claude-sonnet-4.5", "gemini-3.1-pro-preview"];
 
@@ -113,6 +114,9 @@ test("2026-08-31のGitHub公式Copilotモデル廃止告知(2026-09-01廃止・4
 
   if (byId.has("claude-sonnet-4.6")) {
     violations.push("claude-sonnet-4.6: 個人年払いプランのみの例外モデルのため、カタログから除外されているべきです（現スキーマはプラン別可用性を表現できない）");
+  }
+  if (byId.has("raptor-mini")) {
+    violations.push("raptor-mini: Copilot CLIには公開されていないため、カタログから除外されているべきです");
   }
 
   for (const id of ANNOUNCED_DEPRECATIONS) {
