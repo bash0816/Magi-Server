@@ -364,28 +364,16 @@
           "shutdown_source": null
         },
         {
-          "id": "claude-sonnet-4.6",
-          "label": "Claude Sonnet 4.6",
-          "transport": [
-            "cli"
-          ],
-          "available_from": "2026-08-31",
-          "deprecated_at": null,
-          "shutdown_at": null,
-          "deprecated_source": null,
-          "shutdown_source": null
-        },
-        {
           "id": "claude-sonnet-4.5",
           "label": "Claude Sonnet 4.5",
           "transport": [
             "cli"
           ],
           "available_from": "2026-08-31",
-          "deprecated_at": null,
-          "shutdown_at": null,
-          "deprecated_source": null,
-          "shutdown_source": null
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
         },
         {
           "id": "claude-haiku-4.5",
@@ -454,10 +442,10 @@
             "cli"
           ],
           "available_from": "2026-08-31",
-          "deprecated_at": null,
-          "shutdown_at": null,
-          "deprecated_source": null,
-          "shutdown_source": null
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
         },
         {
           "id": "claude-opus-4.5",
@@ -466,10 +454,10 @@
             "cli"
           ],
           "available_from": "2026-08-31",
-          "deprecated_at": null,
-          "shutdown_at": null,
-          "deprecated_source": null,
-          "shutdown_source": null
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
         },
         {
           "id": "gpt-5.6-sol",
