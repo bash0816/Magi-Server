@@ -347,6 +347,263 @@
           "shutdown_source": null
         }
       ]
+    },
+    "copilot": {
+      "label": "GitHub Copilot CLI",
+      "models": [
+        {
+          "id": "claude-sonnet-5",
+          "label": "Claude Sonnet 5",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-sonnet-4.5",
+          "label": "Claude Sonnet 4.5",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
+        },
+        {
+          "id": "claude-haiku-4.5",
+          "label": "Claude Haiku 4.5",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-fable-5",
+          "label": "Claude Fable 5",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-opus-4.8",
+          "label": "Claude Opus 4.8",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-opus-4.8-fast",
+          "label": "Claude Opus 4.8 (fast mode)",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-opus-4.7",
+          "label": "Claude Opus 4.7",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-10-02",
+          "shutdown_at": "2026-10-02",
+          "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
+          "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"
+        },
+        {
+          "id": "claude-opus-4.6",
+          "label": "Claude Opus 4.6",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
+        },
+        {
+          "id": "claude-opus-4.5",
+          "label": "Claude Opus 4.5",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "label": "GPT-5.6 Sol",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "label": "GPT-5.6 Terra",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "label": "GPT-5.6 Luna",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-5.5",
+          "label": "GPT-5.5",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-5.4",
+          "label": "GPT-5.4",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-5.3-codex",
+          "label": "GPT-5.3-Codex",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-5.4-mini",
+          "label": "GPT-5.4 mini",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-5-mini",
+          "label": "GPT-5 mini",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": null,
+          "shutdown_at": null,
+          "deprecated_source": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gemini-3.1-pro-preview",
+          "label": "Gemini 3.1 Pro (Preview)",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-09-01",
+          "shutdown_at": "2026-09-01",
+          "deprecated_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/",
+          "shutdown_source": "https://github.blog/changelog/2026-08-31-selected-github-copilot-models-deprecated/"
+        },
+        {
+          "id": "gemini-3.5-flash",
+          "label": "Gemini 3.5 Flash",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-10-02",
+          "shutdown_at": "2026-10-02",
+          "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
+          "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"
+        },
+        {
+          "id": "gemini-3.6-flash",
+          "label": "Gemini 3.6 Flash",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-10-02",
+          "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
+          "shutdown_at": "2026-10-02",
+          "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"
+        },
+        {
+          "id": "kimi-k2.7-code",
+          "label": "Kimi K2.7 Code",
+          "transport": [
+            "cli"
+          ],
+          "available_from": "2026-08-31",
+          "deprecated_at": "2026-10-02",
+          "shutdown_at": "2026-10-02",
+          "deprecated_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/",
+          "shutdown_source": "https://github.blog/changelog/2026-09-03-upcoming-deprecation-of-selected-github-copilot-models/"
+        }
+      ]
     }
   }
 }
