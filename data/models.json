@@ -30,6 +30,19 @@
           "shutdown_source": null
         },
         {
+          "id": "claude-opus-5-5",
+          "label": "Claude Opus 5.5",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-22",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
           "id": "claude-opus-5",
           "label": "Claude Opus 5",
           "transport": [
