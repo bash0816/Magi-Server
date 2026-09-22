@@ -188,6 +188,30 @@
           "deprecated_source": null,
           "shutdown_at": null,
           "shutdown_source": null
+        },
+        {
+          "id": "gpt-6-sol",
+          "label": "gpt-6-sol",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-09-22",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-6-luna",
+          "label": "gpt-6-luna",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-09-22",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     },
