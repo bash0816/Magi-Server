@@ -100,6 +100,45 @@
       "label": "OpenAI",
       "models": [
         {
+          "id": "gpt-6-astra",
+          "label": "GPT-6 Astra",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-04",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-6-sol",
+          "label": "GPT-6 Sol",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-22",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-6-luna",
+          "label": "GPT-6 Luna",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-22",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
           "id": "gpt-5.6-sol",
           "label": "GPT-5.6 Sol",
           "transport": [
