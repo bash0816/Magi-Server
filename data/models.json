@@ -69,6 +69,19 @@
           "shutdown_source": null
         },
         {
+          "id": "claude-sonnet-5-5",
+          "label": "Claude Sonnet 5.5",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-28",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
           "id": "claude-sonnet-5",
           "label": "Claude Sonnet 5",
           "transport": [
