@@ -69,6 +69,45 @@
           "shutdown_source": null
         },
         {
+          "id": "claude-opus-4-7",
+          "label": "Claude Opus 4.7",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-04-16",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-opus-4-6",
+          "label": "Claude Opus 4.6",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-02-05",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-opus-4-5-20251101",
+          "label": "Claude Opus 4.5",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2025-11-24",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
           "id": "claude-sonnet-5-5",
           "label": "Claude Sonnet 5.5",
           "transport": [
@@ -89,6 +128,32 @@
             "api"
           ],
           "available_from": "2026-06-30",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-sonnet-4-6",
+          "label": "Claude Sonnet 4.6",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-02-17",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929",
+          "label": "Claude Sonnet 4.5",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2025-09-29",
           "deprecated_at": null,
           "deprecated_source": null,
           "shutdown_at": null,
