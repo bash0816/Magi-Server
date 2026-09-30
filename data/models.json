@@ -113,6 +113,19 @@
       "label": "OpenAI",
       "models": [
         {
+          "id": "gpt-6.1-sol",
+          "label": "GPT-6.1 Sol",
+          "transport": [
+            "cli",
+            "api"
+          ],
+          "available_from": "2026-09-29",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
           "id": "gpt-6-astra",
           "label": "GPT-6 Astra",
           "transport": [
