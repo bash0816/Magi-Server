@@ -165,7 +165,8 @@
         "claude-haiku-3",
         "claude-mythos-5-1",
         "claude-lock.json",
-        "claude-haiku-5-5"
+        "claude-haiku-5-5",
+        "claude-startups-program"
       ]
     }
   },
