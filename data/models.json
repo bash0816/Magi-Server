@@ -326,6 +326,18 @@
       "label": "Gemini (Google)",
       "models": [
         {
+          "id": "gemini-4-argon",
+          "label": "Gemini 4 Argon",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-10-13",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
           "id": "gemini-3.6-flash",
           "label": "Gemini 3.6 Flash",
           "transport": [
