@@ -167,7 +167,9 @@
         "claude-mythos-5-1",
         "claude-lock.json",
         "claude-haiku-5-5",
-        "claude-startups-program"
+        "claude-startups-program",
+        "claude-models-on-google-cloud",
+        "claude-models-on-google-cloud-anthropic-managed-iam-permissions"
       ]
     }
   },
