@@ -169,7 +169,12 @@
         "claude-haiku-5-5",
         "claude-startups-program",
         "claude-models-on-google-cloud",
-        "claude-models-on-google-cloud-anthropic-managed-iam-permissions"
+        "claude-models-on-google-cloud-anthropic-managed-iam-permissions",
+        "claude-tag-api",
+        "claude-tag-2026-10-21",
+        "claude-tag",
+        "claude-platform",
+        "claude-enterprise"
       ]
     }
   },
