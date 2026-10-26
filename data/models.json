@@ -224,6 +224,18 @@
           "deprecated_source": null,
           "shutdown_at": null,
           "shutdown_source": null
+        },
+        {
+          "id": "gpt-6.1-terra",
+          "label": "gpt-6.1-terra",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-10-26",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     },
