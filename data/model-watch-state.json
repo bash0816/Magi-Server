@@ -175,7 +175,8 @@
         "claude-tag-2026-10-21",
         "claude-tag",
         "claude-platform",
-        "claude-enterprise"
+        "claude-enterprise",
+        "claude-marks-ai-generated-content"
       ]
     }
   },
