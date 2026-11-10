@@ -179,7 +179,9 @@
         "claude-tag",
         "claude-platform",
         "claude-enterprise",
-        "claude-marks-ai-generated-content"
+        "claude-marks-ai-generated-content",
+        "claude-fable-5-2",
+        "claude-mythos-5-2"
       ]
     }
   },
