@@ -129,7 +129,8 @@
         "gemini-nano-banana-2.1",
         "gemini-4-argon",
         "gemini-omni-1.2-flash",
-        "gemini-4-carbon"
+        "gemini-4-carbon",
+        "gemini-4-hydrogen"
       ]
     },
     "claude": {
