@@ -132,7 +132,8 @@
         "gemini-4-argon",
         "gemini-omni-1.2-flash",
         "gemini-4-carbon",
-        "gemini-4-hydrogen"
+        "gemini-4-hydrogen",
+        "gemini-4-neon"
       ]
     },
     "claude": {
