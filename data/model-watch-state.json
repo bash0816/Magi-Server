@@ -117,7 +117,8 @@
         "gpt-image-2.6-flare",
         "gpt-image-2.6-sunburst",
         "gpt-6.2-sol",
-        "gpt-6.2-astra"
+        "gpt-6.2-astra",
+        "gpt-live-1.1"
       ]
     },
     "gemini": {
