@@ -188,7 +188,10 @@
         "claude-marks-ai-generated-content",
         "claude-fable-5-2",
         "claude-mythos-5-2",
-        "claude-opus-4-6-and-4-5-models"
+        "claude-opus-4-6-and-4-5-models",
+        "claude-opus-4-5-deprecation",
+        "claude-opus-45",
+        "claude-models-on-google-cloud-anthropic-managed"
       ]
     }
   },
