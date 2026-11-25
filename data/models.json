@@ -272,6 +272,54 @@
           "deprecated_source": null,
           "shutdown_at": null,
           "shutdown_source": null
+        },
+        {
+          "id": "gpt-6.1-sol-healthcare",
+          "label": "gpt-6.1-sol-healthcare",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-11-25",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-6.2-sol-healthcare",
+          "label": "gpt-6.2-sol-healthcare",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-11-25",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-6-astra-healthcare",
+          "label": "gpt-6-astra-healthcare",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-11-25",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
+        },
+        {
+          "id": "gpt-6.2-astra-healthcare",
+          "label": "gpt-6.2-astra-healthcare",
+          "transport": [
+            "api"
+          ],
+          "available_from": "2026-11-25",
+          "deprecated_at": null,
+          "deprecated_source": null,
+          "shutdown_at": null,
+          "shutdown_source": null
         }
       ]
     },
